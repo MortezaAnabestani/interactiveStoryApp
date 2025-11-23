@@ -134,14 +134,14 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
 
     setAiLoading(true);
     try {
-      const history = gameState?.history || [];
-      const stats = gameState?.stats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
-      const visitedNodes = history.map(h => h.nodeId || '');
-      const choices = history.map(h => h.choice || '');
+      const choicesHistory = gameState?.choices || [];
+      const stats = gameState?.stats?.playerStats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+      const visitedNodes = gameState?.visitedNodes || [];
+      const choicesText = choicesHistory.map(c => c.choice);
 
       const summary = await aiService.summarizeStory({
         visitedNodes: visitedNodes,
-        choices: choices,
+        choices: choicesText,
         currentStats: stats,
       });
 

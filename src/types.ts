@@ -73,7 +73,7 @@ export interface StoryNode {
 export interface GameState {
   currentNodeId: string;
   visitedNodes: string[];
-  choices: { nodeId: string; choiceId: string }[];
+  choices: { nodeId: string; choiceId: string; choice: string }[];
   stats: GameStats;
 }
 

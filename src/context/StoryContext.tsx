@@ -106,7 +106,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...prev,
         currentNodeId: nextNodeId,
         visitedNodes: [...prev.visitedNodes, nextNodeId],
-        choices: [...prev.choices, { nodeId: prev.currentNodeId, choiceId }],
+        choices: [...prev.choices, { nodeId: prev.currentNodeId, choiceId, choice: choice?.text || '' }],
       };
 
       // اعمال تأثیرات خودکار گره
