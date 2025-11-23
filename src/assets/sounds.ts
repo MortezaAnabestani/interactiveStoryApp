@@ -2,32 +2,25 @@
  * مدیریت صداها و موسیقی
  */
 
-import { Audio } from 'expo-av';
+import { Audio } from "expo-av";
 
 // فعلاً از placeholder استفاده می‌کنیم
 // وقتی فایل‌های صوتی اضافه شد، uncomment کنید:
-/*
 export const sounds = {
   music: {
-    menu: require('../../assets/audio/music/menu.mp3'),
-    story: require('../../assets/audio/music/story.mp3'),
-    battle: require('../../assets/audio/music/battle.mp3'),
-    ending_good: require('../../assets/audio/music/ending_good.mp3'),
-    ending_bad: require('../../assets/audio/music/ending_bad.mp3'),
+    menu: require("../../assets/audio/music/menu.mp3"),
+    story: require("../../assets/audio/music/story.mp3"),
+    battle: require("../../assets/audio/music/battle.mp3"),
+    ending_good: require("../../assets/audio/music/ending_good.mp3"),
+    ending_bad: require("../../assets/audio/music/ending_bad.mp3"),
   },
   sfx: {
-    click: require('../../assets/audio/sfx/click.mp3'),
-    transition: require('../../assets/audio/sfx/transition.mp3'),
-    choice: require('../../assets/audio/sfx/choice.mp3'),
-    success: require('../../assets/audio/sfx/success.mp3'),
-    fail: require('../../assets/audio/sfx/fail.mp3'),
+    click: require("../../assets/audio/sfx/click.mp3"),
+    transition: require("../../assets/audio/sfx/transition.mp3"),
+    choice: require("../../assets/audio/sfx/choice.mp3"),
+    success: require("../../assets/audio/sfx/success.mp3"),
+    fail: require("../../assets/audio/sfx/fail.mp3"),
   },
-};
-*/
-
-export const sounds = {
-  music: {},
-  sfx: {},
 };
 
 /**
@@ -54,13 +47,13 @@ class SoundManager {
   async playMusic(musicKey: string) {
     if (!this.isMusicEnabled) return;
     // TODO: پیاده‌سازی بعد از اضافه کردن فایل‌های موسیقی
-    console.log('پخش موسیقی:', musicKey);
+    console.log("پخش موسیقی:", musicKey);
   }
 
   async playSfx(sfxKey: string) {
     if (!this.isSfxEnabled) return;
     // TODO: پیاده‌سازی بعد از اضافه کردن فایل‌های صوتی
-    console.log('پخش افکت صوتی:', sfxKey);
+    console.log("پخش افکت صوتی:", sfxKey);
   }
 
   async stopMusic() {
