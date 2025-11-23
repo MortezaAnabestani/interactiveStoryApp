@@ -102,7 +102,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     setAiLoading(true);
     try {
       const currentStory = currentNode.text || currentNode.dialogue?.map(d => d.text).join('\n') || '';
-      const hint = await aiService.getHint(currentStory, currentNode.choices);
+      const choices = currentNode.choices || [];
+      const hint = await aiService.getHint(currentStory, choices);
 
       Alert.alert('💡 راهنمایی', hint, [{ text: 'متوجه شدم', style: 'default' }]);
     } catch (error: any) {
@@ -127,7 +128,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
 
     setAiLoading(true);
     try {
-      const recentChoices = gameState.history.slice(-5).map(h => h.choice || '').join(' → ');
+      const history = gameState?.history || [];
+      const recentChoices = history.slice(-5).map(h => h.choice || '').join(' → ') || 'شما تازه داستان را شروع کرده‌اید';
       const summary = await aiService.summarizeStory(recentChoices);
 
       Alert.alert('📖 خلاصه داستان تا اینجا', summary, [{ text: 'باشه', style: 'default' }]);
@@ -154,7 +156,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     setAiLoading(true);
     try {
       const currentStory = currentNode.text || currentNode.dialogue?.map(d => d.text).join('\n') || '';
-      const suggestion = await aiService.suggestNewBranch(currentStory, gameState.stats);
+      const stats = gameState?.stats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+      const suggestion = await aiService.suggestNewBranch(currentStory, stats);
 
       Alert.alert(
         '🎮 پیشنهاد شاخه جدید',
