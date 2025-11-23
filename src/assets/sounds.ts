@@ -2,34 +2,48 @@
  * مدیریت صداها و موسیقی
  */
 
-import { Audio } from "expo-av";
+import { Audio } from 'expo-av';
 
-// تابع کمکی برای بارگذاری ایمن صداها
-const safeRequireSound = (requireFunc: any) => {
-  try {
-    return requireFunc;
-  } catch (error) {
-    console.log("فایل صوتی پیدا نشد:", error);
-    return null;
-  }
-};
+/**
+ * فعلاً صداها غیرفعال هستن
+ * وقتی فایل‌های صوتی رو اضافه کردی، uncomment کن
+ */
 
 export const sounds = {
   music: {
-    menu: safeRequireSound(require("../../assets/audio/music/menu.mp3")),
-    story: safeRequireSound(require("../../assets/audio/music/story.mp3")),
-    battle: safeRequireSound(require("../../assets/audio/music/battle.mp3")),
-    ending_good: safeRequireSound(require("../../assets/audio/music/ending_good.mp3")),
-    ending_bad: safeRequireSound(require("../../assets/audio/music/ending_bad.mp3")),
+    menu: null,
+    story: null,
+    battle: null,
+    ending_good: null,
+    ending_bad: null,
   },
   sfx: {
-    click: safeRequireSound(require("../../assets/audio/sfx/click.mp3")),
-    transition: safeRequireSound(require("../../assets/audio/sfx/transition.mp3")),
-    choice: safeRequireSound(require("../../assets/audio/sfx/choice.mp3")),
-    success: safeRequireSound(require("../../assets/audio/sfx/success.mp3")),
-    fail: safeRequireSound(require("../../assets/audio/sfx/fail.mp3")),
+    click: null,
+    transition: null,
+    choice: null,
+    success: null,
+    fail: null,
   },
 };
+
+/* بعد از اضافه کردن فایل‌های صوتی، این رو uncomment کن:
+export const sounds = {
+  music: {
+    menu: require('../../assets/audio/music/menu.mp3'),
+    story: require('../../assets/audio/music/story.mp3'),
+    battle: require('../../assets/audio/music/battle.mp3'),
+    ending_good: require('../../assets/audio/music/ending_good.mp3'),
+    ending_bad: require('../../assets/audio/music/ending_bad.mp3'),
+  },
+  sfx: {
+    click: require('../../assets/audio/sfx/click.mp3'),
+    transition: require('../../assets/audio/sfx/transition.mp3'),
+    choice: require('../../assets/audio/sfx/choice.mp3'),
+    success: require('../../assets/audio/sfx/success.mp3'),
+    fail: require('../../assets/audio/sfx/fail.mp3'),
+  },
+};
+*/
 
 /**
  * کلاس مدیریت صدا
@@ -43,13 +57,17 @@ class SoundManager {
   private sfxVolume = 0.7;
 
   async initialize() {
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      staysActiveInBackground: true,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    });
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+    } catch (error) {
+      console.log('خطا در راه‌اندازی صدا:', error);
+    }
   }
 
   async playMusic(musicKey: keyof typeof sounds.music) {
@@ -58,7 +76,7 @@ class SoundManager {
     try {
       const soundFile = sounds.music[musicKey];
       if (!soundFile) {
-        console.log("فایل موسیقی موجود نیست:", musicKey);
+        console.log('فایل موسیقی موجود نیست:', musicKey);
         return;
       }
 
@@ -69,16 +87,19 @@ class SoundManager {
       }
 
       // پخش موسیقی جدید
-      const { sound } = await Audio.Sound.createAsync(soundFile, {
-        shouldPlay: true,
-        isLooping: true,
-        volume: this.musicVolume,
-      });
+      const { sound } = await Audio.Sound.createAsync(
+        soundFile,
+        {
+          shouldPlay: true,
+          isLooping: true,
+          volume: this.musicVolume,
+        }
+      );
 
       this.musicSound = sound;
-      console.log("✅ موسیقی پخش شد:", musicKey);
+      console.log('✅ موسیقی پخش شد:', musicKey);
     } catch (error) {
-      console.log("❌ خطا در پخش موسیقی:", error);
+      console.log('❌ خطا در پخش موسیقی:', error);
     }
   }
 
@@ -88,14 +109,17 @@ class SoundManager {
     try {
       const soundFile = sounds.sfx[sfxKey];
       if (!soundFile) {
-        console.log("فایل افکت صوتی موجود نیست:", sfxKey);
+        console.log('فایل افکت صوتی موجود نیست:', sfxKey);
         return;
       }
 
-      const { sound } = await Audio.Sound.createAsync(soundFile, {
-        shouldPlay: true,
-        volume: this.sfxVolume,
-      });
+      const { sound } = await Audio.Sound.createAsync(
+        soundFile,
+        {
+          shouldPlay: true,
+          volume: this.sfxVolume,
+        }
+      );
 
       // پخش و بعد از اتمام، آزاد کردن حافظه
       sound.setOnPlaybackStatusUpdate((status) => {
@@ -104,9 +128,9 @@ class SoundManager {
         }
       });
 
-      console.log("✅ افکت صوتی پخش شد:", sfxKey);
+      console.log('✅ افکت صوتی پخش شد:', sfxKey);
     } catch (error) {
-      console.log("❌ خطا در پخش افکت صوتی:", error);
+      console.log('❌ خطا در پخش افکت صوتی:', error);
     }
   }
 
