@@ -2,9 +2,9 @@
  * سرویس AI - اتصال به مدل‌های زبانی (OpenAI & Gemini)
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type AIProvider = 'openai' | 'gemini';
+export type AIProvider = "openai" | "gemini";
 
 export interface AIConfig {
   provider: AIProvider;
@@ -15,27 +15,27 @@ export interface AIConfig {
 }
 
 export interface AIMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
 class AIService {
   private config: AIConfig = {
-    provider: 'gemini',
-    apiKey: '',
-    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
-    model: 'gemini-2.0-flash-exp',
+    provider: "gemini",
+    apiKey: "AIzaSyBrhP5iJl4tKtOf_EEgEGaXB66QZjsrHnQ",
+    apiUrl: "https://generativelanguage.googleapis.com/v1beta/models",
+    model: "gemini-2.5-flash",
     enabled: false,
   };
 
   async loadConfig(): Promise<AIConfig> {
     try {
-      const saved = await AsyncStorage.getItem('aiConfig');
+      const saved = await AsyncStorage.getItem("aiConfig");
       if (saved) {
         this.config = JSON.parse(saved);
       }
     } catch (error) {
-      console.error('خطا در بارگذاری تنظیمات AI:', error);
+      console.error("خطا در بارگذاری تنظیمات AI:", error);
     }
     return this.config;
   }
@@ -43,9 +43,9 @@ class AIService {
   async saveConfig(config: AIConfig): Promise<void> {
     try {
       this.config = config;
-      await AsyncStorage.setItem('aiConfig', JSON.stringify(config));
+      await AsyncStorage.setItem("aiConfig", JSON.stringify(config));
     } catch (error) {
-      console.error('خطا در ذخیره تنظیمات AI:', error);
+      console.error("خطا در ذخیره تنظیمات AI:", error);
     }
   }
 
@@ -62,24 +62,26 @@ class AIService {
    */
   private convertToGeminiFormat(messages: AIMessage[]): any {
     // Gemini نیاز به فرمت متفاوتی دارد
-    let systemInstruction = '';
+    let systemInstruction = "";
     const contents: any[] = [];
 
     messages.forEach((msg) => {
-      if (msg.role === 'system') {
+      if (msg.role === "system") {
         systemInstruction = msg.content;
       } else {
         contents.push({
-          role: msg.role === 'assistant' ? 'model' : 'user',
+          role: msg.role === "assistant" ? "model" : "user",
           parts: [{ text: msg.content }],
         });
       }
     });
 
     return {
-      system_instruction: systemInstruction ? {
-        parts: [{ text: systemInstruction }]
-      } : undefined,
+      system_instruction: systemInstruction
+        ? {
+            parts: [{ text: systemInstruction }],
+          }
+        : undefined,
       contents: contents,
       generationConfig: {
         temperature: 0.8,
@@ -102,9 +104,9 @@ class AIService {
     const url = `${this.config.apiUrl}/${this.config.model}:generateContent?key=${this.config.apiKey}`;
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),
     });
@@ -124,7 +126,7 @@ class AIService {
       }
     }
 
-    throw new Error('پاسخ نامعتبر از Gemini API');
+    throw new Error("پاسخ نامعتبر از Gemini API");
   }
 
   /**
@@ -132,10 +134,10 @@ class AIService {
    */
   private async callOpenAI(messages: AIMessage[]): Promise<string> {
     const response = await fetch(this.config.apiUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.apiKey}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.config.apiKey}`,
       },
       body: JSON.stringify({
         model: this.config.model,
@@ -159,17 +161,17 @@ class AIService {
    */
   async callAI(messages: AIMessage[]): Promise<string> {
     if (!this.isEnabled()) {
-      throw new Error('AI فعال نیست یا API Key وارد نشده است');
+      throw new Error("AI فعال نیست یا API Key وارد نشده است");
     }
 
     try {
-      if (this.config.provider === 'gemini') {
+      if (this.config.provider === "gemini") {
         return await this.callGemini(messages);
       } else {
         return await this.callOpenAI(messages);
       }
     } catch (error) {
-      console.error('خطا در فراخوانی AI:', error);
+      console.error("خطا در فراخوانی AI:", error);
       throw error;
     }
   }
@@ -185,18 +187,20 @@ class AIService {
   }): Promise<string> {
     const messages: AIMessage[] = [
       {
-        role: 'system',
+        role: "system",
         content: `تو یک نویسنده حرفه‌ای داستان‌های تعاملی فارسی هستی. داستان رستم و سهراب از شاهنامه را می‌شناسی.
         وظیفه‌ات تولید محتوای جذاب و درگیرکننده برای بازی داستانی است.
         از زبان ادبی اما قابل فهم استفاده کن. دیالوگ‌ها باید طبیعی و احساسی باشند.`,
       },
       {
-        role: 'user',
+        role: "user",
         content: `وضعیت فعلی:
 متن: ${params.currentText}
-آمار بازیکن: شرافت ${params.playerStats.honor}، شجاعت ${params.playerStats.courage}، خرد ${params.playerStats.wisdom}
-انتخاب‌های اخیر: ${params.recentChoices.join(', ')}
-${params.characterName ? `شخصیت فعلی: ${params.characterName}` : ''}
+آمار بازیکن: شرافت ${params.playerStats.honor}، شجاعت ${params.playerStats.courage}، خرد ${
+          params.playerStats.wisdom
+        }
+انتخاب‌های اخیر: ${params.recentChoices.join(", ")}
+${params.characterName ? `شخصیت فعلی: ${params.characterName}` : ""}
 
 لطفاً ادامه‌ای مناسب و جذاب برای این داستان بنویس (حداکثر ۳ خط).`,
       },
@@ -216,12 +220,12 @@ ${params.characterName ? `شخصیت فعلی: ${params.characterName}` : ''}
   }): Promise<string> {
     const messages: AIMessage[] = [
       {
-        role: 'system',
+        role: "system",
         content: `تو متخصص نوشتن دیالوگ برای شخصیت‌های داستانی هستی.
         دیالوگ‌ها باید با شخصیت کاراکتر هماهنگ باشند و احساسات را منتقل کنند.`,
       },
       {
-        role: 'user',
+        role: "user",
         content: `شخصیت: ${params.characterName}
 شخصیت: ${params.characterPersonality}
 موقعیت: ${params.situation}
@@ -244,16 +248,18 @@ ${params.characterName ? `شخصیت فعلی: ${params.characterName}` : ''}
   }): Promise<string> {
     const messages: AIMessage[] = [
       {
-        role: 'system',
+        role: "system",
         content: `تو یک مشاور هوشمند برای بازیکنان هستی.
         وظیفه‌ات کمک به بازیکنان برای انتخاب بهترین تصمیم است، بدون اینکه همه چیز را لو بدهی.`,
       },
       {
-        role: 'user',
+        role: "user",
         content: `موقعیت: ${params.currentSituation}
 گزینه‌های موجود:
-${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join('\n')}
-آمار بازیکن: شرافت ${params.playerStats.honor}، شجاعت ${params.playerStats.courage}، خرد ${params.playerStats.wisdom}
+${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+آمار بازیکن: شرافت ${params.playerStats.honor}، شجاعت ${params.playerStats.courage}، خرد ${
+          params.playerStats.wisdom
+        }
 
 یک راهنمایی کوتاه و مفید برای انتخاب بده (حداکثر ۲ خط).`,
       },
@@ -272,11 +278,11 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join('\n')}
   }): Promise<string> {
     const messages: AIMessage[] = [
       {
-        role: 'system',
-        content: 'تو یک راوی حرفه‌ای هستی که می‌تواند داستان را به صورت خلاصه و جذاب بیان کنی.',
+        role: "system",
+        content: "تو یک راوی حرفه‌ای هستی که می‌تواند داستان را به صورت خلاصه و جذاب بیان کنی.",
       },
       {
-        role: 'user',
+        role: "user",
         content: `گره‌های بازدید شده: ${params.visitedNodes.length}
 تعداد انتخاب‌ها: ${params.choices.length}
 آمار فعلی: شرافت ${params.currentStats.honor}، شجاعت ${params.currentStats.courage}، خرد ${params.currentStats.wisdom}
@@ -298,12 +304,12 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join('\n')}
   }): Promise<{ title: string; description: string; choices: string[] }> {
     const messages: AIMessage[] = [
       {
-        role: 'system',
+        role: "system",
         content: `تو یک نویسنده خلاق داستان‌های تعاملی هستی.
         می‌توانی شاخه‌های جدید و جذاب برای داستان پیشنهاد بدهی.`,
       },
       {
-        role: 'user',
+        role: "user",
         content: `گره فعلی: ${params.currentNode}
 تم داستان: ${params.storyTheme}
 آمار بازیکن: شرافت ${params.playerStats.honor}، شجاعت ${params.playerStats.courage}، خرد ${params.playerStats.wisdom}
@@ -320,11 +326,14 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join('\n')}
     const response = await this.callAI(messages);
     try {
       // پاک کردن markdown code blocks اگر وجود دارد
-      const cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const cleanedResponse = response
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       return JSON.parse(cleanedResponse);
     } catch {
       return {
-        title: 'صحنه جدید',
+        title: "صحنه جدید",
         description: response,
         choices: [],
       };
@@ -341,13 +350,13 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join('\n')}
   }): Promise<string> {
     const messages: AIMessage[] = [
       {
-        role: 'system',
-        content: 'تو یک توصیفگر بصری حرفه‌ای هستی که می‌تواند شخصیت‌ها را برای تصویرسازان توصیف کنی.',
+        role: "system",
+        content: "تو یک توصیفگر بصری حرفه‌ای هستی که می‌تواند شخصیت‌ها را برای تصویرسازان توصیف کنی.",
       },
       {
-        role: 'user',
+        role: "user",
         content: `نام شخصیت: ${params.characterName}
-ویژگی‌های شخصیتی: ${params.personalityTraits.join(', ')}
+ویژگی‌های شخصیتی: ${params.personalityTraits.join(", ")}
 نقش: ${params.role}
 
 یک توضیح بصری دقیق و جزئی از این شخصیت برای یک تصویرساز بنویس (حداکثر ۳ خط).`,
