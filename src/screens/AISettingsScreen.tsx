@@ -28,9 +28,10 @@ interface Props {
 
 const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
   const [config, setConfig] = useState<AIConfig>({
+    provider: 'gemini',
     apiKey: '',
-    apiUrl: 'https://api.openai.com/v1/chat/completions',
-    model: 'gpt-3.5-turbo',
+    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+    model: 'gemini-2.0-flash-exp',
     enabled: false,
   });
   const [showApiKey, setShowApiKey] = useState(false);
@@ -51,6 +52,24 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
       Alert.alert('✅ موفق', 'تنظیمات AI ذخیره شد');
     } catch (error) {
       Alert.alert('❌ خطا', 'خطا در ذخیره تنظیمات');
+    }
+  };
+
+  const handleProviderChange = (provider: 'openai' | 'gemini') => {
+    if (provider === 'gemini') {
+      setConfig({
+        ...config,
+        provider: 'gemini',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+        model: 'gemini-2.0-flash-exp',
+      });
+    } else {
+      setConfig({
+        ...config,
+        provider: 'openai',
+        apiUrl: 'https://api.openai.com/v1/chat/completions',
+        model: 'gpt-3.5-turbo',
+      });
     }
   };
 
@@ -134,6 +153,88 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Provider Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>ارائه‌دهنده AI</Text>
+          <View style={styles.providerContainer}>
+            <TouchableOpacity
+              style={[
+                styles.providerButton,
+                config.provider === 'gemini' && styles.providerButtonActive,
+              ]}
+              onPress={() => handleProviderChange('gemini')}
+            >
+              <MaterialCommunityIcons
+                name="google"
+                size={24}
+                color={config.provider === 'gemini' ? theme.colors.gold.main : theme.colors.text.secondary}
+              />
+              <Text
+                style={[
+                  styles.providerButtonText,
+                  config.provider === 'gemini' && styles.providerButtonTextActive,
+                ]}
+              >
+                Google Gemini
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.providerButton,
+                config.provider === 'openai' && styles.providerButtonActive,
+              ]}
+              onPress={() => handleProviderChange('openai')}
+            >
+              <MaterialCommunityIcons
+                name="alpha-o-box"
+                size={24}
+                color={config.provider === 'openai' ? theme.colors.gold.main : theme.colors.text.secondary}
+              />
+              <Text
+                style={[
+                  styles.providerButtonText,
+                  config.provider === 'openai' && styles.providerButtonTextActive,
+                ]}
+              >
+                OpenAI
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Model Presets for Gemini */}
+        {config.provider === 'gemini' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>مدل‌های پیشنهادی Gemini</Text>
+            <View style={styles.presetsContainer}>
+              <TouchableOpacity
+                style={styles.presetButton}
+                onPress={() => setConfig({ ...config, model: 'gemini-2.0-flash-exp' })}
+              >
+                <Text style={styles.presetButtonText}>⚡ Gemini 2.0 Flash</Text>
+                <Text style={styles.presetButtonSubtext}>(پیشنهادی - سریع)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.presetButton}
+                onPress={() => setConfig({ ...config, model: 'gemini-1.5-pro' })}
+              >
+                <Text style={styles.presetButtonText}>🎯 Gemini 1.5 Pro</Text>
+                <Text style={styles.presetButtonSubtext}>(دقیق‌تر)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.presetButton}
+                onPress={() => setConfig({ ...config, model: 'gemini-1.5-flash' })}
+              >
+                <Text style={styles.presetButtonText}>⚡ Gemini 1.5 Flash</Text>
+                <Text style={styles.presetButtonSubtext}>(اقتصادی)</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* API Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>تنظیمات API</Text>
@@ -164,7 +265,9 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             <Text style={styles.inputHint}>
-              برای دریافت API Key به openai.com مراجعه کنید
+              {config.provider === 'gemini'
+                ? 'برای دریافت API Key به aistudio.google.com مراجعه کنید'
+                : 'برای دریافت API Key به openai.com مراجعه کنید'}
             </Text>
           </View>
 
@@ -427,6 +530,57 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
     textAlign: 'right',
     lineHeight: theme.typography.size.sm * 1.5,
+  },
+  providerContainer: {
+    flexDirection: 'row-reverse',
+    gap: theme.spacing.md,
+  },
+  providerButton: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: 'rgba(26, 26, 46, 0.6)',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.gold.dark,
+  },
+  providerButtonActive: {
+    backgroundColor: 'rgba(183, 148, 82, 0.2)',
+    borderColor: theme.colors.gold.main,
+  },
+  providerButtonText: {
+    fontSize: theme.typography.size.md,
+    fontWeight: theme.typography.weight.semibold,
+    color: theme.colors.text.secondary,
+  },
+  providerButtonTextActive: {
+    color: theme.colors.gold.main,
+  },
+  presetsContainer: {
+    gap: theme.spacing.sm,
+  },
+  presetButton: {
+    backgroundColor: 'rgba(26, 26, 46, 0.6)',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.gold.dark,
+    alignItems: 'center',
+  },
+  presetButtonText: {
+    fontSize: theme.typography.size.md,
+    fontWeight: theme.typography.weight.semibold,
+    color: theme.colors.text.primary,
+    textAlign: 'center',
+  },
+  presetButtonSubtext: {
+    fontSize: theme.typography.size.sm,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    marginTop: theme.spacing.xs,
   },
 });
 

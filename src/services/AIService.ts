@@ -1,10 +1,13 @@
 /**
- * سرویس AI - اتصال به مدل‌های زبانی
+ * سرویس AI - اتصال به مدل‌های زبانی (OpenAI & Gemini)
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export type AIProvider = 'openai' | 'gemini';
+
 export interface AIConfig {
+  provider: AIProvider;
   apiKey: string;
   apiUrl: string;
   model: string;
@@ -18,9 +21,10 @@ export interface AIMessage {
 
 class AIService {
   private config: AIConfig = {
+    provider: 'gemini',
     apiKey: '',
-    apiUrl: 'https://api.openai.com/v1/chat/completions',
-    model: 'gpt-3.5-turbo',
+    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+    model: 'gemini-2.0-flash-exp',
     enabled: false,
   };
 
@@ -54,7 +58,104 @@ class AIService {
   }
 
   /**
-   * فراخوانی API مدل زبانی
+   * تبدیل پیام‌ها به فرمت Gemini
+   */
+  private convertToGeminiFormat(messages: AIMessage[]): any {
+    // Gemini نیاز به فرمت متفاوتی دارد
+    let systemInstruction = '';
+    const contents: any[] = [];
+
+    messages.forEach((msg) => {
+      if (msg.role === 'system') {
+        systemInstruction = msg.content;
+      } else {
+        contents.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }],
+        });
+      }
+    });
+
+    return {
+      system_instruction: systemInstruction ? {
+        parts: [{ text: systemInstruction }]
+      } : undefined,
+      contents: contents,
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 500,
+      },
+    };
+  }
+
+  /**
+   * فراخوانی Gemini API
+   */
+  private async callGemini(messages: AIMessage[]): Promise<string> {
+    const requestBody = this.convertToGeminiFormat(messages);
+
+    // حذف system_instruction اگر خالی است
+    if (!requestBody.system_instruction) {
+      delete requestBody.system_instruction;
+    }
+
+    const url = `${this.config.apiUrl}/${this.config.model}:generateContent?key=${this.config.apiKey}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`خطای Gemini API: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    // استخراج متن از پاسخ Gemini
+    if (data.candidates && data.candidates.length > 0) {
+      const candidate = data.candidates[0];
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        return candidate.content.parts[0].text;
+      }
+    }
+
+    throw new Error('پاسخ نامعتبر از Gemini API');
+  }
+
+  /**
+   * فراخوانی OpenAI API
+   */
+  private async callOpenAI(messages: AIMessage[]): Promise<string> {
+    const response = await fetch(this.config.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.config.model,
+        messages: messages,
+        temperature: 0.8,
+        max_tokens: 500,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`خطای OpenAI API: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  }
+
+  /**
+   * فراخوانی API مدل زبانی (پشتیبانی از OpenAI و Gemini)
    */
   async callAI(messages: AIMessage[]): Promise<string> {
     if (!this.isEnabled()) {
@@ -62,27 +163,11 @@ class AIService {
     }
 
     try {
-      const response = await fetch(this.config.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.config.model,
-          messages: messages,
-          temperature: 0.8,
-          max_tokens: 500,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`خطای API: ${response.status} - ${errorText}`);
+      if (this.config.provider === 'gemini') {
+        return await this.callGemini(messages);
+      } else {
+        return await this.callOpenAI(messages);
       }
-
-      const data = await response.json();
-      return data.choices[0].message.content;
     } catch (error) {
       console.error('خطا در فراخوانی AI:', error);
       throw error;
@@ -234,7 +319,9 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 
     const response = await this.callAI(messages);
     try {
-      return JSON.parse(response);
+      // پاک کردن markdown code blocks اگر وجود دارد
+      const cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(cleanedResponse);
     } catch {
       return {
         title: 'صحنه جدید',
