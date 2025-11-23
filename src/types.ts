@@ -70,11 +70,22 @@ export interface StoryNode {
   itemGained?: string;
 }
 
+// گره پویا با metadata برای merge back به backbone
+export interface DynamicStoryNode extends StoryNode {
+  isDynamic: true;
+  parentNodeId: string; // از کدام node ثابت منشعب شده
+  returnNodeId: string; // به کدام node ثابت برمی‌گردد
+  depth: number; // چند قدم از backbone دور شده (0, 1, 2, ...)
+  maxDepth: number; // حداکثر می‌تواند چند قدم دور شود (معمولاً 2-3)
+  createdAt: number; // timestamp برای sort و cleanup
+}
+
 export interface GameState {
   currentNodeId: string;
   visitedNodes: string[];
   choices: { nodeId: string; choiceId: string; choice: string }[];
   stats: GameStats;
+  dynamicNodes: { [nodeId: string]: DynamicStoryNode }; // node های پویای ساخته شده توسط AI
 }
 
 export interface StoryData {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GameState, StoryNode, GameStats, PlayerStats } from "../types";
+import { GameState, StoryNode, GameStats, PlayerStats, DynamicStoryNode } from "../types";
 import { rostamSohrabStory } from "../data/storyData";
 
 interface StoryContextType {
@@ -12,6 +12,7 @@ interface StoryContextType {
   loadProgress: () => Promise<void>;
   updateStats: (statChanges: Partial<PlayerStats>) => void;
   updateRelationship: (characterId: string, change: number) => void;
+  addDynamicNode: (node: DynamicStoryNode) => string; // returns node id
 }
 
 const StoryContext = createContext<StoryContextType | undefined>(undefined);
@@ -45,9 +46,11 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     visitedNodes: [rostamSohrabStory.startNodeId],
     choices: [],
     stats: initialGameStats,
+    dynamicNodes: {},
   });
 
-  const currentNode = rostamSohrabStory.nodes[gameState.currentNodeId];
+  // دریافت node فعلی (ابتدا از dynamicNodes، سپس از backbone)
+  const currentNode = gameState.dynamicNodes[gameState.currentNodeId] || rostamSohrabStory.nodes[gameState.currentNodeId];
 
   // به‌روزرسانی آمار
   const updateStats = (statChanges: Partial<PlayerStats>) => {
@@ -98,8 +101,8 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // رفتن به گره بعدی
-    const nextNode = rostamSohrabStory.nodes[nextNodeId];
+    // رفتن به گره بعدی (ابتدا از dynamicNodes، سپس از backbone)
+    const nextNode = gameState.dynamicNodes[nextNodeId] || rostamSohrabStory.nodes[nextNodeId];
 
     setGameState((prev) => {
       const newState = {
@@ -158,7 +161,24 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       visitedNodes: [rostamSohrabStory.startNodeId],
       choices: [],
       stats: initialGameStats,
+      dynamicNodes: {},
     });
+  };
+
+  // اضافه کردن یک node پویا به داستان
+  const addDynamicNode = (node: DynamicStoryNode): string => {
+    const nodeId = `dynamic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const nodeWithId = { ...node, id: nodeId, createdAt: Date.now() };
+
+    setGameState((prev) => ({
+      ...prev,
+      dynamicNodes: {
+        ...prev.dynamicNodes,
+        [nodeId]: nodeWithId,
+      },
+    }));
+
+    return nodeId;
   };
 
   const saveProgress = async () => {
@@ -196,6 +216,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         loadProgress,
         updateStats,
         updateRelationship,
+        addDynamicNode,
       }}
     >
       {children}
