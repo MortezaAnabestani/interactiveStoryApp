@@ -2,7 +2,7 @@
  * صفحه داستان - نسخه بازی‌وار با گفتگوها و آمار
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { useStory } from '../context/StoryContext';
@@ -58,9 +59,12 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     };
   }, [currentNode.id]);
 
-  useEffect(() => {
-    checkAIEnabled();
-  }, []);
+  // بررسی وضعیت AI هر بار که صفحه focus می‌شود
+  useFocusEffect(
+    useCallback(() => {
+      checkAIEnabled();
+    }, [])
+  );
 
   const checkAIEnabled = async () => {
     const config = await aiService.loadConfig();
