@@ -22,7 +22,7 @@ export interface AIMessage {
 class AIService {
   private config: AIConfig = {
     provider: "gemini",
-    apiKey: "AIzaSyBrhP5iJl4tKtOf_EEgEGaXB66QZjsrHnQ",
+    apiKey: "AIzaSyDZxpRhxzVYsdB1bJ8HT-nzEoua-CA0v1c",
     apiUrl: "https://generativelanguage.googleapis.com/v1beta/models",
     model: "gemini-2.5-flash",
     enabled: false,
