@@ -103,7 +103,13 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const currentStory = currentNode.text || currentNode.dialogue?.map(d => d.text).join('\n') || '';
       const choices = currentNode.choices || [];
-      const hint = await aiService.getHint(currentStory, choices);
+      const stats = gameState?.stats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+
+      const hint = await aiService.getHint({
+        currentSituation: currentStory,
+        availableChoices: choices.map(c => c.text),
+        playerStats: stats,
+      });
 
       Alert.alert('💡 راهنمایی', hint, [{ text: 'متوجه شدم', style: 'default' }]);
     } catch (error: any) {
@@ -129,8 +135,15 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     setAiLoading(true);
     try {
       const history = gameState?.history || [];
-      const recentChoices = history.slice(-5).map(h => h.choice || '').join(' → ') || 'شما تازه داستان را شروع کرده‌اید';
-      const summary = await aiService.summarizeStory(recentChoices);
+      const stats = gameState?.stats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+      const visitedNodes = history.map(h => h.nodeId || '');
+      const choices = history.map(h => h.choice || '');
+
+      const summary = await aiService.summarizeStory({
+        visitedNodes: visitedNodes,
+        choices: choices,
+        currentStats: stats,
+      });
 
       Alert.alert('📖 خلاصه داستان تا اینجا', summary, [{ text: 'باشه', style: 'default' }]);
     } catch (error: any) {
@@ -157,11 +170,20 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const currentStory = currentNode.text || currentNode.dialogue?.map(d => d.text).join('\n') || '';
       const stats = gameState?.stats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
-      const suggestion = await aiService.suggestNewBranch(currentStory, stats);
+
+      const result = await aiService.suggestNewBranch({
+        currentNode: currentStory,
+        playerStats: stats,
+        storyTheme: 'رستم و سهراب',
+      });
+
+      const message = `${result.title}\n\n${result.description}${
+        result.choices.length > 0 ? '\n\nانتخاب‌ها:\n' + result.choices.map((c, i) => `${i + 1}. ${c}`).join('\n') : ''
+      }`;
 
       Alert.alert(
         '🎮 پیشنهاد شاخه جدید',
-        suggestion,
+        message,
         [{ text: 'جالب بود!', style: 'default' }]
       );
     } catch (error: any) {
