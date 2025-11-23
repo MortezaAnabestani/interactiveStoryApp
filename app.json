@@ -4,29 +4,20 @@
     "slug": "rostam-sohrab-interactive",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#1a1a2e",
+      "resizeMode": "contain"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.rostamsohrab.interactive"
     },
     "android": {
+      "package": "com.rostamsohrab.interactive",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
-      },
-      "package": "com.rostamsohrab.interactive"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      }
     }
   }
 }
