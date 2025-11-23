@@ -1,5 +1,5 @@
 /**
- * صفحه داستان با طراحی حرفه‌ای و dialog box
+ * صفحه داستان - نسخه بازی‌وار با گفتگوها و آمار
  */
 
 import React, { useState, useEffect } from 'react';
@@ -21,6 +21,10 @@ import { theme } from '../theme';
 import { useStory } from '../context/StoryContext';
 import { images } from '../assets/images';
 import { soundManager } from '../assets/sounds';
+import DialogueBox from '../components/DialogueBox';
+import StatsBar from '../components/StatsBar';
+import RelationshipBar from '../components/RelationshipBar';
+import { characters } from '../data/storyData';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,26 +36,27 @@ interface Props {
 
 const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const { currentNode, makeChoice, resetStory, gameState } = useStory();
-  const [showText, setShowText] = useState(false);
+  const [showDialogues, setShowDialogues] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
-    setShowText(false);
+    setShowDialogues(false);
     setShowChoices(false);
 
-    const textTimer = setTimeout(() => setShowText(true), 300);
-    const choicesTimer = setTimeout(() => setShowChoices(true), 800);
+    const dialogueTimer = setTimeout(() => setShowDialogues(true), 300);
+    const choicesTimer = setTimeout(() => setShowChoices(true), 1200);
 
     return () => {
-      clearTimeout(textTimer);
+      clearTimeout(dialogueTimer);
       clearTimeout(choicesTimer);
     };
   }, [currentNode.id]);
 
   const handleChoice = (choiceId: string, nextNodeId: string) => {
-    // پخش صدای انتخاب
     soundManager.playSfx('choice');
     setShowChoices(false);
+    setShowDialogues(false);
     makeChoice(choiceId, nextNodeId);
   };
 
@@ -63,50 +68,17 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     resetStory();
   };
 
-  // انتخاب عکس پس‌زمینه بر اساس محتوای داستان
+  // انتخاب عکس پس‌زمینه
   const getBackgroundImage = () => {
-    const nodeId = currentNode.id;
-
-    // استفاده از عکس‌های local (اگر وجود دارند)
-    if (nodeId.includes('battle') || nodeId.includes('war') || nodeId.includes('fight') || nodeId.includes('tragic')) {
-      return images.backgrounds.battle;
-    } else if (nodeId.includes('palace') || nodeId.includes('king')) {
-      return images.backgrounds.palace;
-    } else if (nodeId.includes('reunion') || nodeId.includes('happy') || nodeId.includes('good')) {
-      return images.backgrounds.reunion;
-    } else if (nodeId === 'start') {
-      return images.backgrounds.start;
+    if (currentNode.background) {
+      // @ts-ignore
+      return images.backgrounds[currentNode.background] || images.backgrounds.default;
     }
-
-    // پیش‌فرض
     return images.backgrounds.default;
   };
 
-  // پخش موسیقی بر اساس صحنه
-  useEffect(() => {
-    const nodeId = currentNode.id;
-
-    if (nodeId.includes('battle') || nodeId.includes('fight')) {
-      soundManager.playMusic('battle');
-    } else if (currentNode.isEnding) {
-      if (currentNode.endingType === 'good') {
-        soundManager.playMusic('ending_good');
-      } else if (currentNode.endingType === 'bad') {
-        soundManager.playMusic('ending_bad');
-      }
-    } else if (nodeId === 'start') {
-      soundManager.playMusic('story');
-    }
-
-    // Cleanup
-    return () => {
-      // موسیقی رو نگه می‌داریم تا transition روان باشه
-    };
-  }, [currentNode.id]);
-
   return (
     <View style={styles.container}>
-      {/* Background Image */}
       <ImageBackground
         source={getBackgroundImage()}
         style={styles.background}
@@ -125,7 +97,7 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
             >
               <MaterialCommunityIcons
                 name="menu"
-                size={28}
+                size={24}
                 color={theme.colors.gold.main}
               />
             </TouchableOpacity>
@@ -137,68 +109,105 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
               </Text>
             </View>
 
-            <View style={styles.menuButton} />
+            <TouchableOpacity
+              style={styles.menuButton}
+              onPress={() => setShowStats(!showStats)}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="chart-bar"
+                size={24}
+                color={theme.colors.gold.main}
+              />
+            </TouchableOpacity>
           </View>
 
-          {/* Dialog Box */}
-          <View style={styles.dialogContainer}>
-            {showText && (
+          {/* Stats Panel (Collapsible) */}
+          {showStats && (
+            <Animatable.View
+              animation="fadeInDown"
+              duration={400}
+              style={styles.statsPanel}
+            >
+              <ScrollView
+                style={styles.statsPanelScroll}
+                showsVerticalScrollIndicator={false}
+              >
+                <StatsBar stats={gameState.stats.playerStats} compact />
+                <RelationshipBar
+                  relationships={gameState.stats.relationships}
+                  characters={characters}
+                  compact
+                />
+              </ScrollView>
+            </Animatable.View>
+          )}
+
+          {/* Dialogue Container */}
+          <ScrollView
+            style={styles.dialogueContainer}
+            contentContainerStyle={styles.dialogueContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {showDialogues && currentNode.dialogue && currentNode.dialogue.map((dialogue, index) => (
+              <DialogueBox
+                key={index}
+                dialogue={dialogue}
+                characterName={characters[dialogue.speaker]?.name || dialogue.speaker}
+                delay={index * 400}
+              />
+            ))}
+
+            {/* متن روایت (اگر وجود داشته باشد) */}
+            {showDialogues && currentNode.text && (
               <Animatable.View
-                animation="fadeInUp"
+                animation="fadeIn"
+                delay={currentNode.dialogue ? currentNode.dialogue.length * 400 : 0}
                 duration={600}
-                style={styles.dialogBox}
+                style={styles.narrativeBox}
               >
                 <LinearGradient
-                  colors={['rgba(26, 26, 46, 0.95)', 'rgba(31, 43, 77, 0.95)']}
-                  style={styles.dialogGradient}
+                  colors={['rgba(26, 26, 46, 0.9)', 'rgba(31, 43, 77, 0.9)']}
+                  style={styles.narrativeGradient}
                 >
-                  {/* Decorative Corner */}
-                  <View style={styles.dialogDecoration}>
-                    <MaterialCommunityIcons
-                      name="star-four-points"
-                      size={20}
-                      color={theme.colors.gold.main}
-                    />
-                  </View>
-
-                  <ScrollView
-                    style={styles.textScrollView}
-                    contentContainerStyle={styles.textScrollContent}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <Text style={styles.storyText}>{currentNode.text}</Text>
-                  </ScrollView>
-
-                  {/* Ending Badge */}
-                  {currentNode.isEnding && (
-                    <Animatable.View
-                      animation="bounceIn"
-                      delay={400}
-                      style={[
-                        styles.endingBadge,
-                        { backgroundColor: theme.colors.ending[currentNode.endingType || 'neutral'] }
-                      ]}
-                    >
-                      <MaterialCommunityIcons
-                        name={
-                          currentNode.endingType === 'good' ? 'star' :
-                          currentNode.endingType === 'bad' ? 'heart-broken' :
-                          'circle-outline'
-                        }
-                        size={20}
-                        color="#fff"
-                      />
-                      <Text style={styles.endingText}>
-                        {currentNode.endingType === 'good' ? 'پایان خوش' :
-                         currentNode.endingType === 'bad' ? 'پایان تلخ' :
-                         'پایان'}
-                      </Text>
-                    </Animatable.View>
-                  )}
+                  <Text style={styles.narrativeText}>{currentNode.text}</Text>
                 </LinearGradient>
               </Animatable.View>
             )}
-          </View>
+
+            {/* Ending Badge */}
+            {currentNode.isEnding && showDialogues && (
+              <Animatable.View
+                animation="bounceIn"
+                delay={800}
+                style={[
+                  styles.endingBadge,
+                  {
+                    backgroundColor: theme.colors.ending[currentNode.endingType || 'neutral'],
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={
+                    currentNode.endingType === 'good'
+                      ? 'star'
+                      : currentNode.endingType === 'bad'
+                      ? 'heart-broken'
+                      : 'circle-outline'
+                  }
+                  size={24}
+                  color="#fff"
+                />
+                <Text style={styles.endingText}>
+                  {currentNode.endingType === 'good'
+                    ? 'پایان خوش'
+                    : currentNode.endingType === 'bad'
+                    ? 'پایان تلخ'
+                    : 'پایان'}
+                </Text>
+              </Animatable.View>
+            )}
+          </ScrollView>
 
           {/* Choices Container */}
           <View style={styles.choicesContainer}>
@@ -208,48 +217,105 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
                 contentContainerStyle={styles.choicesContent}
                 showsVerticalScrollIndicator={false}
               >
-                {currentNode.choices.map((choice, index) => (
-                  <Animatable.View
-                    key={choice.id}
-                    animation="fadeInRight"
-                    delay={index * 150}
-                    duration={600}
-                  >
-                    <TouchableOpacity
-                      style={styles.choiceButton}
-                      onPress={() => handleChoice(choice.id, choice.nextNodeId)}
-                      activeOpacity={0.8}
+                {currentNode.choices.map((choice, index) => {
+                  // بررسی شرایط فعال بودن انتخاب
+                  const isDisabled = false; // می‌توانید شرایط را بررسی کنید
+
+                  return (
+                    <Animatable.View
+                      key={choice.id}
+                      animation="fadeInUp"
+                      delay={index * 150}
+                      duration={600}
                     >
-                      <LinearGradient
-                        colors={[theme.colors.primary.lighter, theme.colors.primary.light]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.choiceGradient}
+                      <TouchableOpacity
+                        style={[
+                          styles.choiceButton,
+                          isDisabled && styles.choiceButtonDisabled,
+                        ]}
+                        onPress={() => handleChoice(choice.id, choice.nextNodeId)}
+                        activeOpacity={0.8}
+                        disabled={isDisabled}
                       >
-                        <View style={styles.choiceNumber}>
-                          <Text style={styles.choiceNumberText}>{index + 1}</Text>
-                        </View>
-                        <View style={styles.choiceTextContainer}>
-                          <Text style={styles.choiceText}>{choice.text}</Text>
-                          {choice.consequence && (
-                            <Text style={styles.consequenceText}>
-                              💭 {choice.consequence}
+                        <LinearGradient
+                          colors={
+                            isDisabled
+                              ? ['#2d3561', '#1f2b4d']
+                              : [theme.colors.primary.lighter, theme.colors.primary.light]
+                          }
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.choiceGradient}
+                        >
+                          <View style={styles.choiceTextContainer}>
+                            <Text
+                              style={[
+                                styles.choiceText,
+                                isDisabled && styles.choiceTextDisabled,
+                              ]}
+                            >
+                              {choice.text}
                             </Text>
-                          )}
-                        </View>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </Animatable.View>
-                ))}
+                            {choice.consequence && (
+                              <Text style={styles.consequenceText}>
+                                💭 {choice.consequence}
+                              </Text>
+                            )}
+
+                            {/* نمایش تأثیرات */}
+                            {(choice.statChanges || choice.relationshipChanges) && (
+                              <View style={styles.effectsContainer}>
+                                {choice.statChanges && (
+                                  <View style={styles.effectRow}>
+                                    {Object.entries(choice.statChanges).map(
+                                      ([stat, change]) =>
+                                        change !== 0 && (
+                                          <View key={stat} style={styles.effectBadge}>
+                                            <Text style={styles.effectText}>
+                                              {stat === 'honor'
+                                                ? '🛡️'
+                                                : stat === 'courage'
+                                                ? '⚔️'
+                                                : stat === 'wisdom'
+                                                ? '🧠'
+                                                : '🏆'}{' '}
+                                              {change > 0 ? '+' : ''}
+                                              {change}
+                                            </Text>
+                                          </View>
+                                        )
+                                    )}
+                                  </View>
+                                )}
+                                {choice.relationshipChanges && (
+                                  <View style={styles.effectRow}>
+                                    {Object.entries(choice.relationshipChanges).map(
+                                      ([charId, change]) =>
+                                        change !== 0 && (
+                                          <View key={charId} style={styles.effectBadge}>
+                                            <Text style={styles.effectText}>
+                                              ❤️ {characters[charId]?.name}: {change > 0 ? '+' : ''}
+                                              {change}
+                                            </Text>
+                                          </View>
+                                        )
+                                    )}
+                                  </View>
+                                )}
+                              </View>
+                            )}
+                          </View>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animatable.View>
+                  );
+                })}
               </ScrollView>
             )}
 
             {/* Restart Button for Endings */}
             {showChoices && currentNode.isEnding && (
-              <Animatable.View
-                animation="fadeInUp"
-                delay={400}
-              >
+              <Animatable.View animation="fadeInUp" delay={400}>
                 <TouchableOpacity
                   style={styles.restartButton}
                   onPress={handleRestart}
@@ -259,11 +325,7 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
                     colors={[theme.colors.status.warning, theme.colors.gold.dark]}
                     style={styles.restartGradient}
                   >
-                    <MaterialCommunityIcons
-                      name="restart"
-                      size={24}
-                      color="#fff"
-                    />
+                    <MaterialCommunityIcons name="restart" size={24} color="#fff" />
                     <Text style={styles.restartText}>شروع دوباره داستان</Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -295,7 +357,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.xxl,
-    paddingBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+    backgroundColor: 'rgba(10, 14, 39, 0.8)',
   },
   menuButton: {
     width: 44,
@@ -304,111 +367,102 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(26, 26, 46, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.gold.dark,
   },
   headerCenter: {
     flex: 1,
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: theme.typography.size.xl,
+    fontSize: theme.typography.size.lg,
     fontWeight: theme.typography.weight.bold,
     color: theme.colors.gold.main,
     textAlign: 'center',
   },
   progressText: {
-    fontSize: theme.typography.size.sm,
+    fontSize: theme.typography.size.xs,
     color: theme.colors.text.tertiary,
     marginTop: theme.spacing.xs,
   },
-  dialogContainer: {
+  statsPanel: {
+    maxHeight: height * 0.3,
+    backgroundColor: 'rgba(10, 14, 39, 0.95)',
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.gold.dark,
+  },
+  statsPanelScroll: {
+    maxHeight: height * 0.3,
+  },
+  dialogueContainer: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.lg,
   },
-  dialogBox: {
-    maxHeight: height * 0.5,
-    borderRadius: theme.borderRadius.xl,
-    overflow: 'hidden',
-    ...theme.shadows.xl,
-  },
-  dialogGradient: {
-    padding: theme.spacing.lg,
-    borderWidth: 2,
-    borderColor: theme.colors.gold.dark,
-    borderRadius: theme.borderRadius.xl,
-  },
-  dialogDecoration: {
-    position: 'absolute',
-    top: theme.spacing.md,
-    left: theme.spacing.md,
-    zIndex: 1,
-  },
-  textScrollView: {
-    maxHeight: height * 0.4,
-  },
-  textScrollContent: {
-    paddingTop: theme.spacing.sm,
-  },
-  storyText: {
-    fontSize: theme.typography.size.lg,
-    lineHeight: theme.typography.size.lg * theme.typography.lineHeight.relaxed,
-    color: theme.colors.text.primary,
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
-  endingBadge: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: theme.spacing.lg,
+  dialogueContent: {
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    gap: theme.spacing.sm,
   },
-  endingText: {
-    fontSize: theme.typography.size.lg,
-    fontWeight: theme.typography.weight.bold,
-    color: '#fff',
-  },
-  choicesContainer: {
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xl,
-  },
-  choicesScrollView: {
-    maxHeight: height * 0.35,
-  },
-  choicesContent: {
-    paddingVertical: theme.spacing.sm,
-  },
-  choiceButton: {
+  narrativeBox: {
+    marginHorizontal: theme.spacing.md,
     marginVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
     ...theme.shadows.md,
   },
-  choiceGradient: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
+  narrativeGradient: {
     padding: theme.spacing.md,
     borderWidth: 2,
     borderColor: theme.colors.gold.dark,
     borderRadius: theme.borderRadius.lg,
   },
-  choiceNumber: {
-    width: 36,
-    height: 36,
-    borderRadius: theme.borderRadius.round,
-    backgroundColor: theme.colors.gold.main,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: theme.spacing.md,
+  narrativeText: {
+    fontSize: theme.typography.size.md,
+    lineHeight: theme.typography.size.md * theme.typography.lineHeight.relaxed,
+    color: theme.colors.text.secondary,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    fontStyle: 'italic',
   },
-  choiceNumberText: {
-    fontSize: theme.typography.size.lg,
-    fontWeight: theme.typography.weight.bold,
-    color: theme.colors.primary.dark,
+  endingBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: theme.spacing.md,
+    marginVertical: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
+    gap: theme.spacing.md,
+    ...theme.shadows.xl,
+  },
+  endingText: {
+    fontSize: theme.typography.size.xxl,
+    fontWeight: theme.typography.weight.extrabold,
+    color: '#fff',
+  },
+  choicesContainer: {
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
+    backgroundColor: 'rgba(10, 14, 39, 0.8)',
+  },
+  choicesScrollView: {
+    maxHeight: height * 0.28,
+  },
+  choicesContent: {
+    paddingVertical: theme.spacing.sm,
+  },
+  choiceButton: {
+    marginVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+    ...theme.shadows.md,
+  },
+  choiceButtonDisabled: {
+    opacity: 0.5,
+  },
+  choiceGradient: {
+    padding: theme.spacing.md,
+    borderWidth: 2,
+    borderColor: theme.colors.gold.dark,
+    borderRadius: theme.borderRadius.lg,
   },
   choiceTextContainer: {
     flex: 1,
@@ -421,6 +475,9 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
     lineHeight: theme.typography.size.md * theme.typography.lineHeight.normal,
   },
+  choiceTextDisabled: {
+    color: theme.colors.text.disabled,
+  },
   consequenceText: {
     fontSize: theme.typography.size.sm,
     color: theme.colors.text.tertiary,
@@ -428,6 +485,28 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
     marginTop: theme.spacing.xs,
     fontStyle: 'italic',
+  },
+  effectsContainer: {
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
+  effectRow: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+  },
+  effectBadge: {
+    backgroundColor: 'rgba(243, 156, 18, 0.2)',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.gold.dark,
+  },
+  effectText: {
+    fontSize: theme.typography.size.xs,
+    color: theme.colors.gold.main,
+    fontWeight: theme.typography.weight.semibold,
   },
   restartButton: {
     marginTop: theme.spacing.md,
