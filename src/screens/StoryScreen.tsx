@@ -305,13 +305,15 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
             )}
 
             {/* AI Tools Section */}
-            {aiEnabled && !currentNode.isEnding && showDialogues && (
+            {!currentNode.isEnding && showDialogues && (
               <Animatable.View
                 animation="fadeInUp"
                 delay={600}
                 style={styles.aiToolsContainer}
               >
-                <Text style={styles.aiToolsTitle}>🤖 ابزارهای AI</Text>
+                <Text style={styles.aiToolsTitle}>
+                  🤖 ابزارهای AI {!aiEnabled && '(غیرفعال)'}
+                </Text>
                 <View style={styles.aiButtonsRow}>
                   <TouchableOpacity
                     style={styles.aiButton}
