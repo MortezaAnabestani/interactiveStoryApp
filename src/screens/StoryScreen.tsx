@@ -11,6 +11,8 @@ import {
   ScrollView,
   Dimensions,
   ImageBackground,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
@@ -25,6 +27,7 @@ import DialogueBox from '../components/DialogueBox';
 import StatsBar from '../components/StatsBar';
 import RelationshipBar from '../components/RelationshipBar';
 import { characters } from '../data/storyData';
+import { aiService } from '../services/AIService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,6 +42,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const [showDialogues, setShowDialogues] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
 
   useEffect(() => {
     setShowDialogues(false);
@@ -53,6 +58,15 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     };
   }, [currentNode.id]);
 
+  useEffect(() => {
+    checkAIEnabled();
+  }, []);
+
+  const checkAIEnabled = async () => {
+    const config = await aiService.loadConfig();
+    setAiEnabled(config.enabled);
+  };
+
   const handleChoice = (choiceId: string, nextNodeId: string) => {
     soundManager.playSfx('choice');
     setShowChoices(false);
@@ -66,6 +80,88 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleRestart = () => {
     resetStory();
+  };
+
+  const handleGetHint = async () => {
+    if (!aiEnabled) {
+      Alert.alert(
+        '⚠️ AI غیرفعال است',
+        'برای استفاده از قابلیت‌های AI، ابتدا از منوی تنظیمات آن را فعال کنید.',
+        [
+          { text: 'باشه', style: 'cancel' },
+          { text: 'برو به تنظیمات', onPress: () => navigation.navigate('AISettings') },
+        ]
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const currentStory = currentNode.text || currentNode.dialogue?.map(d => d.text).join('\n') || '';
+      const hint = await aiService.getHint(currentStory, currentNode.choices);
+
+      Alert.alert('💡 راهنمایی', hint, [{ text: 'متوجه شدم', style: 'default' }]);
+    } catch (error: any) {
+      Alert.alert('❌ خطا', `خطا در دریافت راهنمایی:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleGetSummary = async () => {
+    if (!aiEnabled) {
+      Alert.alert(
+        '⚠️ AI غیرفعال است',
+        'برای استفاده از قابلیت‌های AI، ابتدا از منوی تنظیمات آن را فعال کنید.',
+        [
+          { text: 'باشه', style: 'cancel' },
+          { text: 'برو به تنظیمات', onPress: () => navigation.navigate('AISettings') },
+        ]
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const recentChoices = gameState.history.slice(-5).map(h => h.choice || '').join(' → ');
+      const summary = await aiService.summarizeStory(recentChoices);
+
+      Alert.alert('📖 خلاصه داستان تا اینجا', summary, [{ text: 'باشه', style: 'default' }]);
+    } catch (error: any) {
+      Alert.alert('❌ خطا', `خطا در دریافت خلاصه:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleSuggestBranch = async () => {
+    if (!aiEnabled) {
+      Alert.alert(
+        '⚠️ AI غیرفعال است',
+        'برای استفاده از قابلیت‌های AI، ابتدا از منوی تنظیمات آن را فعال کنید.',
+        [
+          { text: 'باشه', style: 'cancel' },
+          { text: 'برو به تنظیمات', onPress: () => navigation.navigate('AISettings') },
+        ]
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const currentStory = currentNode.text || currentNode.dialogue?.map(d => d.text).join('\n') || '';
+      const suggestion = await aiService.suggestNewBranch(currentStory, gameState.stats);
+
+      Alert.alert(
+        '🎮 پیشنهاد شاخه جدید',
+        suggestion,
+        [{ text: 'جالب بود!', style: 'default' }]
+      );
+    } catch (error: any) {
+      Alert.alert('❌ خطا', `خطا در دریافت پیشنهاد:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   // انتخاب عکس پس‌زمینه
@@ -205,6 +301,81 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
                     ? 'پایان تلخ'
                     : 'پایان'}
                 </Text>
+              </Animatable.View>
+            )}
+
+            {/* AI Tools Section */}
+            {aiEnabled && !currentNode.isEnding && showDialogues && (
+              <Animatable.View
+                animation="fadeInUp"
+                delay={600}
+                style={styles.aiToolsContainer}
+              >
+                <Text style={styles.aiToolsTitle}>🤖 ابزارهای AI</Text>
+                <View style={styles.aiButtonsRow}>
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={handleGetHint}
+                    disabled={aiLoading}
+                    activeOpacity={0.7}
+                  >
+                    <LinearGradient
+                      colors={['#3498DB', '#2980B9']}
+                      style={styles.aiButtonGradient}
+                    >
+                      {aiLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="lightbulb-on" size={20} color="#fff" />
+                          <Text style={styles.aiButtonText}>راهنمایی</Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={handleGetSummary}
+                    disabled={aiLoading}
+                    activeOpacity={0.7}
+                  >
+                    <LinearGradient
+                      colors={['#9B59B6', '#8E44AD']}
+                      style={styles.aiButtonGradient}
+                    >
+                      {aiLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="book-open-variant" size={20} color="#fff" />
+                          <Text style={styles.aiButtonText}>خلاصه</Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={handleSuggestBranch}
+                    disabled={aiLoading}
+                    activeOpacity={0.7}
+                  >
+                    <LinearGradient
+                      colors={['#E67E22', '#D35400']}
+                      style={styles.aiButtonGradient}
+                    >
+                      {aiLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="creation" size={20} color="#fff" />
+                          <Text style={styles.aiButtonText}>ایده جدید</Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
               </Animatable.View>
             )}
           </ScrollView>
@@ -524,6 +695,43 @@ const styles = StyleSheet.create({
   restartText: {
     fontSize: theme.typography.size.lg,
     fontWeight: theme.typography.weight.bold,
+    color: '#fff',
+  },
+  aiToolsContainer: {
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+  },
+  aiToolsTitle: {
+    fontSize: theme.typography.size.md,
+    fontWeight: theme.typography.weight.semibold,
+    color: theme.colors.gold.main,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  aiButtonsRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    flexWrap: 'wrap',
+  },
+  aiButton: {
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    ...theme.shadows.md,
+  },
+  aiButtonGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.xs,
+    minWidth: 100,
+  },
+  aiButtonText: {
+    fontSize: theme.typography.size.sm,
+    fontWeight: theme.typography.weight.semibold,
     color: '#fff',
   },
 });
