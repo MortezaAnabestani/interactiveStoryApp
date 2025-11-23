@@ -39,7 +39,7 @@ interface Props {
 }
 
 const StoryScreen: React.FC<Props> = ({ navigation }) => {
-  const { currentNode, makeChoice, resetStory, gameState } = useStory();
+  const { currentNode, makeChoice, resetStory, gameState, addDynamicNode } = useStory();
   const [showDialogues, setShowDialogues] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -169,7 +169,7 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     setAiLoading(true);
     try {
       const currentStory = currentNode.text || currentNode.dialogue?.map(d => d.text).join('\n') || '';
-      const stats = gameState?.stats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+      const stats = gameState?.stats?.playerStats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
 
       const result = await aiService.suggestNewBranch({
         currentNode: currentStory,
@@ -177,14 +177,47 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         storyTheme: 'رستم و سهراب',
       });
 
-      const message = `${result.title}\n\n${result.description}${
-        result.choices.length > 0 ? '\n\nانتخاب‌ها:\n' + result.choices.map((c, i) => `${i + 1}. ${c}`).join('\n') : ''
-      }`;
+      // ساخت dynamic node با metadata
+      const dynamicNode: any = {
+        isDynamic: true,
+        parentNodeId: currentNode.id,
+        returnNodeId: currentNode.id, // فعلاً به همین node برمی‌گردد
+        depth: 0,
+        maxDepth: 2,
+        title: result.title,
+        text: result.description,
+        background: currentNode.background,
+        choices: result.choices.map((choiceText, i) => ({
+          id: `choice_${i}`,
+          text: choiceText,
+          nextNodeId: currentNode.id, // فعلاً همه به node اصلی برمی‌گردند
+        })),
+      };
+
+      // اضافه کردن choice برگشت
+      dynamicNode.choices.push({
+        id: 'return',
+        text: '🔙 بازگشت به داستان اصلی',
+        nextNodeId: currentNode.id,
+      });
+
+      const newNodeId = addDynamicNode(dynamicNode);
+
+      // پرسیدن از بازیکن
+      const message = `${result.title}\n\n${result.description}\n\nمی‌خوای الان این مسیر رو تجربه کنی؟`;
 
       Alert.alert(
-        '🎮 پیشنهاد شاخه جدید',
+        '🎮 شاخه جدید ساخته شد!',
         message,
-        [{ text: 'جالب بود!', style: 'default' }]
+        [
+          { text: 'بعداً', style: 'cancel' },
+          {
+            text: 'آره، بریم!',
+            onPress: () => {
+              handleChoice('ai_branch', newNodeId);
+            },
+          },
+        ]
       );
     } catch (error: any) {
       Alert.alert('❌ خطا', `خطا در دریافت پیشنهاد:\n${error.message}`);
