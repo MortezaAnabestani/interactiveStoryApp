@@ -11,6 +11,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { useStory } from '../context/StoryContext';
+import { soundManager } from '../assets/sounds';
 
 const { width } = Dimensions.get('window');
 
@@ -64,11 +65,18 @@ const MainMenuScreen: React.FC<Props> = ({ navigation }) => {
   const { loadProgress, gameState } = useStory();
   const hasSavedGame = gameState.visitedNodes.length > 1;
 
+  // پخش موسیقی منو
+  React.useEffect(() => {
+    soundManager.playMusic('menu');
+  }, []);
+
   const handleNewGame = () => {
+    soundManager.playSfx('click');
     navigation.navigate('Story');
   };
 
   const handleContinue = async () => {
+    soundManager.playSfx('click');
     await loadProgress();
     navigation.navigate('Story');
   };

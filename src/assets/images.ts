@@ -2,36 +2,62 @@
  * مدیریت تصاویر اپلیکیشن
  */
 
-// Helper function to safely require images
-const safeRequire = (path: string, fallback: any) => {
+// تابع کمکی برای بارگذاری ایمن تصاویر
+const safeRequire = (path: any, fallbackUrl: string) => {
   try {
-    return require(path);
+    // اگر فایل وجود داره، استفاده کن
+    return path;
   } catch {
-    return fallback;
+    // اگر نه، از placeholder استفاده کن
+    return { uri: fallbackUrl };
   }
 };
-
-const defaultBackground = { uri: 'https://via.placeholder.com/800x1200/1a1a2e/f39c12?text=Background' };
-const defaultCharacter = { uri: 'https://via.placeholder.com/400x600/1a1a2e/f39c12?text=Character' };
 
 export const images = {
   // تصاویر پس‌زمینه برای هر صحنه
   backgrounds: {
-    start: defaultBackground,
-    battle: defaultBackground,
-    palace: defaultBackground,
-    desert: defaultBackground,
-    reunion: defaultBackground,
-    default: defaultBackground,
+    start: safeRequire(
+      require('../../assets/images/backgrounds/start.jpg'),
+      'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=1200&q=80'
+    ),
+    battle: safeRequire(
+      require('../../assets/images/backgrounds/battle.jpg'),
+      'https://images.unsplash.com/photo-1528850647741-de83d6e20068?w=1200&q=80'
+    ),
+    palace: safeRequire(
+      require('../../assets/images/backgrounds/palace.jpg'),
+      'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1200&q=80'
+    ),
+    desert: safeRequire(
+      require('../../assets/images/backgrounds/desert.jpg'),
+      'https://images.unsplash.com/photo-1528850647741-de83d6e20068?w=1200&q=80'
+    ),
+    reunion: safeRequire(
+      require('../../assets/images/backgrounds/reunion.jpg'),
+      'https://images.unsplash.com/photo-1580654712603-eb43273aff33?w=1200&q=80'
+    ),
+    default: { uri: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1200&q=80' },
   },
 
   // تصاویر شخصیت‌ها
   characters: {
-    rostam: defaultCharacter,
-    sohrab: defaultCharacter,
-    tahmineh: defaultCharacter,
-    kavoos: defaultCharacter,
-    default: defaultCharacter,
+    rostam: safeRequire(
+      require('../../assets/images/characters/rostam.png'),
+      'https://via.placeholder.com/400x600/1a1a2e/f39c12?text=Rostam'
+    ),
+    sohrab: safeRequire(
+      require('../../assets/images/characters/sohrab.png'),
+      'https://via.placeholder.com/400x600/1a1a2e/f39c12?text=Sohrab'
+    ),
+    tahmineh: safeRequire(
+      require('../../assets/images/characters/tahmineh.png'),
+      'https://via.placeholder.com/400x600/1a1a2e/f39c12?text=Tahmineh'
+    ),
+    kavoos: safeRequire(
+      require('../../assets/images/characters/kavoos.png'),
+      'https://via.placeholder.com/400x600/1a1a2e/f39c12?text=Kavoos'
+    ),
+    default: { uri: 'https://via.placeholder.com/400x600/1a1a2e/f39c12?text=Character' },
   },
 
   // المان‌های UI
