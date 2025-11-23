@@ -11,7 +11,6 @@ import {
   ScrollView,
   Dimensions,
   ImageBackground,
-  I18nManager,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
@@ -20,10 +19,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { useStory } from '../context/StoryContext';
-
-// فعال‌سازی RTL
-I18nManager.forceRTL(true);
-I18nManager.allowRTL(true);
 
 const { width, height } = Dimensions.get('window');
 
@@ -64,11 +59,30 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     resetStory();
   };
 
+  // انتخاب عکس پس‌زمینه بر اساس محتوای داستان
+  const getBackgroundImage = () => {
+    const nodeId = currentNode.id;
+
+    // عکس‌های واقعی از Unsplash
+    if (nodeId.includes('battle') || nodeId.includes('war') || nodeId.includes('fight')) {
+      return 'https://images.unsplash.com/photo-1528850647741-de83d6e20068?w=1200&q=80'; // صحرا
+    } else if (nodeId.includes('palace') || nodeId.includes('king')) {
+      return 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1200&q=80'; // معماری ایرانی
+    } else if (nodeId.includes('reunion') || nodeId.includes('happy') || nodeId.includes('good')) {
+      return 'https://images.unsplash.com/photo-1580654712603-eb43273aff33?w=1200&q=80'; // باغ ایرانی
+    } else if (nodeId === 'start') {
+      return 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=1200&q=80'; // غروب کوهستان
+    }
+
+    // پیش‌فرض: عکس زیبای معماری ایرانی
+    return 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1200&q=80';
+  };
+
   return (
     <View style={styles.container}>
       {/* Background Image */}
       <ImageBackground
-        source={{ uri: 'https://via.placeholder.com/800x1200/1a1a2e/f39c12?text=Background' }}
+        source={{ uri: getBackgroundImage() }}
         style={styles.background}
         blurRadius={3}
       >

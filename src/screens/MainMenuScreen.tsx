@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -74,14 +74,19 @@ const MainMenuScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient
-      colors={[
-        theme.colors.background.gradient.start,
-        theme.colors.background.gradient.middle,
-        theme.colors.background.gradient.end,
-      ]}
-      style={styles.container}
+    <ImageBackground
+      source={{ uri: 'https://images.unsplash.com/photo-1534330980-1bc0676fe2ee?w=1200&q=80' }}
+      style={styles.backgroundImage}
+      blurRadius={2}
     >
+      <LinearGradient
+        colors={[
+          'rgba(10, 14, 39, 0.85)',
+          'rgba(16, 33, 62, 0.9)',
+          'rgba(31, 43, 77, 0.95)',
+        ]}
+        style={styles.container}
+      >
       {/* Header */}
       <Animatable.View
         animation="fadeInDown"
@@ -132,10 +137,16 @@ const MainMenuScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.footerSubtext}>ساخته شده با ❤️ برای علاقه‌مندان به شاهنامه</Text>
       </Animatable.View>
     </LinearGradient>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
     paddingTop: theme.spacing.xxxl,
