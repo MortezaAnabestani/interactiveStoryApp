@@ -42,6 +42,36 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       <ScrollView style={styles.content}>
+        {/* AI Settings Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.aiButton}
+            onPress={() => navigation.navigate('AISettings')}
+          >
+            <LinearGradient
+              colors={['#9B59B6', '#8E44AD']}
+              style={styles.aiButtonGradient}
+            >
+              <MaterialCommunityIcons
+                name="robot"
+                size={32}
+                color="#fff"
+              />
+              <View style={styles.aiButtonText}>
+                <Text style={styles.aiButtonTitle}>تنظیمات هوش مصنوعی</Text>
+                <Text style={styles.aiButtonSubtitle}>
+                  فعال‌سازی قابلیت‌های AI در بازی
+                </Text>
+              </View>
+              <MaterialCommunityIcons
+                name="chevron-left"
+                size={24}
+                color="#fff"
+              />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>درباره اپلیکیشن</Text>
           <View style={styles.infoCard}>
@@ -106,6 +136,32 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
     marginVertical: theme.spacing.xs,
     textAlign: 'right',
+  },
+  aiButton: {
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+    ...theme.shadows.lg,
+  },
+  aiButtonGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  aiButtonText: {
+    flex: 1,
+  },
+  aiButtonTitle: {
+    fontSize: theme.typography.size.xl,
+    fontWeight: theme.typography.weight.bold,
+    color: '#fff',
+    textAlign: 'right',
+  },
+  aiButtonSubtitle: {
+    fontSize: theme.typography.size.sm,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'right',
+    marginTop: theme.spacing.xs,
   },
 });
 

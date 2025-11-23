@@ -5,28 +5,9 @@
 import { Audio } from 'expo-av';
 
 /**
- * فعلاً صداها غیرفعال هستن
- * وقتی فایل‌های صوتی رو اضافه کردی، uncomment کن
+ * مدیریت صداها - استفاده از فایل‌های لوکال
  */
 
-export const sounds = {
-  music: {
-    menu: null,
-    story: null,
-    battle: null,
-    ending_good: null,
-    ending_bad: null,
-  },
-  sfx: {
-    click: null,
-    transition: null,
-    choice: null,
-    success: null,
-    fail: null,
-  },
-};
-
-/* بعد از اضافه کردن فایل‌های صوتی، این رو uncomment کن:
 export const sounds = {
   music: {
     menu: require('../../assets/audio/music/menu.mp3'),
@@ -43,7 +24,6 @@ export const sounds = {
     fail: require('../../assets/audio/sfx/fail.mp3'),
   },
 };
-*/
 
 /**
  * کلاس مدیریت صدا

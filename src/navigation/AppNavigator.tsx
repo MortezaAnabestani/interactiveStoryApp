@@ -12,6 +12,7 @@ import SplashScreen from '../screens/SplashScreen';
 import MainMenuScreen from '../screens/MainMenuScreen';
 import StoryScreen from '../screens/StoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import AISettingsScreen from '../screens/AISettingsScreen';
 import GalleryScreen from '../screens/GalleryScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -37,6 +38,7 @@ export const AppNavigator = () => {
         <Stack.Screen name="MainMenu" component={MainMenuScreen} />
         <Stack.Screen name="Story" component={StoryScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="AISettings" component={AISettingsScreen} />
         <Stack.Screen name="Gallery" component={GalleryScreen} />
       </Stack.Navigator>
     </NavigationContainer>

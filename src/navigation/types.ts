@@ -7,6 +7,7 @@ export type RootStackParamList = {
   MainMenu: undefined;
   Story: undefined;
   Settings: undefined;
+  AISettings: undefined;
   Gallery: undefined;
   Achievements: undefined;
   SaveSlots: undefined;
