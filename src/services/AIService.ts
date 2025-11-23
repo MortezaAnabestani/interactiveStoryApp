@@ -85,7 +85,7 @@ class AIService {
       contents: contents,
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 500,
+        maxOutputTokens: 2000,
       },
     };
   }
@@ -93,42 +93,83 @@ class AIService {
   /**
    * فراخوانی Gemini API
    */
+  /**
+   * فراخوانی Gemini API (نسخه اصلاح شده و ایمن)
+   */
   private async callGemini(messages: AIMessage[]): Promise<string> {
+    // ۱. تنظیم نام مدل صحیح
+    const MODEL_NAME = "gemini-2.5-flash"; // مدل ۲.۵ وجود ندارد!
+
     const requestBody = this.convertToGeminiFormat(messages);
 
-    // حذف system_instruction اگر خالی است
+    // ۲. حذف system_instruction اگر خالی است
     if (!requestBody.system_instruction) {
       delete requestBody.system_instruction;
     }
 
-    const url = `${this.config.apiUrl}/${this.config.model}:generateContent?key=${this.config.apiKey}`;
+    // ۳. تنظیمات ایمنی برای جلوگیری از بلاک شدن (خیلی مهم)
+    requestBody.safetySettings = [
+      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+    ];
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
+    const url = `${this.config.apiUrl}/${MODEL_NAME}:generateContent?key=${this.config.apiKey}`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`خطای Gemini API: ${response.status} - ${errorText}`);
-    }
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
 
-    const data = await response.json();
+      const textResponse = await response.text();
+      console.log("--- Raw Gemini Response ---");
+      console.log(textResponse); // این خط را در کنسول چک کنید
+      console.log("---------------------------");
 
-    // استخراج متن از پاسخ Gemini
-    if (data.candidates && data.candidates.length > 0) {
-      const candidate = data.candidates[0];
-      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        return candidate.content.parts[0].text;
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} - ${textResponse}`);
       }
+
+      const data = JSON.parse(textResponse);
+
+      // ۴. بررسی خطای بلاک شدن توسط گوگل
+      if (data.promptFeedback && data.promptFeedback.blockReason) {
+        throw new Error(`محتوا بلاک شد! دلیل: ${data.promptFeedback.blockReason}`);
+      }
+
+      // ۵. بررسی وجود کاندیدا
+      if (!data.candidates || data.candidates.length === 0) {
+        // اگر candidates خالی بود ولی ارور هم نداشتیم
+        console.log("Full Request Body was:", JSON.stringify(requestBody));
+        throw new Error("پاسخ خالی از گوگل (Candidates is empty)");
+      }
+
+      const candidate = data.candidates[0];
+
+      // === تغییر مهم: بررسی دقیق دلیل توقف مدل ===
+      if (candidate.finishReason !== "STOP" && candidate.finishReason !== "MAX_TOKENS") {
+        throw new Error(`مدل پاسخی نداد. دلیل توقف: ${candidate.finishReason}`);
+      }
+
+      // اگر دلیل MAX_TOKENS بود، یک هشدار در کنسول بده ولی برنامه را متوقف نکن
+      if (candidate.finishReason === "MAX_TOKENS") {
+        console.warn("پاسخ به دلیل محدودیت طول قطع شد (Max Tokens Reached).");
+      }
+
+      // بررسی وجود کانتنت
+      if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+        throw new Error("مدل پیام خالی برگرداند (بدون متن).");
+      }
+
+      return candidate.content.parts[0].text;
+    } catch (error) {
+      console.error("خطای نهایی:", error);
+      throw error;
     }
-
-    throw new Error("پاسخ نامعتبر از Gemini API");
   }
-
   /**
    * فراخوانی OpenAI API
    */
