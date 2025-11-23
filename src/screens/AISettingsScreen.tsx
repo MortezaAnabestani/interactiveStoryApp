@@ -474,7 +474,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     fontSize: theme.typography.size.md,
     color: theme.colors.text.primary,
-    textAlign: 'left',
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   inputWithIcon: {
     paddingRight: 50,
