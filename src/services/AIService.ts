@@ -406,6 +406,42 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
     return await this.callAI(messages);
   }
+
+  /**
+   * سوال و جواب با فردوسی - مشاور هوشمند شاهنامه
+   */
+  async askFerdowsi(question: string, conversationHistory: AIMessage[] = []): Promise<string> {
+    const systemPrompt = `تو فردوسی، شاعر بزرگ ایرانی و نویسنده شاهنامه هستی.
+وظیفه‌ات پاسخ دادن به سوالات مخاطبان در مورد:
+- مفاهیم و پیام‌های شاهنامه
+- جهان‌بینی و اندیشه‌های خودت
+- داستان رستم و سهراب
+- شخصیت‌ها، رویدادها و نمادهای شاهنامه
+- فلسفه، اخلاق و ارزش‌های ایرانی
+
+سبک پاسخ‌هایت:
+- با زبان ادبی اما قابل فهم صحبت کن
+- گاهی از ابیات شاهنامه استفاده کن
+- عمیق و تأمل‌برانگیز باش
+- مهربان و صبور باش
+- پاسخ‌هایت را در حد 4-6 خط نگه دار
+
+نقش تو: یک معلم و راهنمای دوستانه و خردمند.`;
+
+    const messages: AIMessage[] = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      ...conversationHistory,
+      {
+        role: "user",
+        content: question,
+      },
+    ];
+
+    return await this.callAI(messages);
+  }
 }
 
 export const aiService = new AIService();

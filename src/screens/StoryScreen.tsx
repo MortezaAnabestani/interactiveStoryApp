@@ -27,6 +27,7 @@ import { soundManager } from '../assets/sounds';
 import DialogueBox from '../components/DialogueBox';
 import StatsBar from '../components/StatsBar';
 import RelationshipBar from '../components/RelationshipBar';
+import AskFerdowsiModal from '../components/AskFerdowsiModal';
 import { characters } from '../data/storyData';
 import { aiService } from '../services/AIService';
 
@@ -45,6 +46,7 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const [showStats, setShowStats] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [showFerdowsiModal, setShowFerdowsiModal] = useState(false);
 
   useEffect(() => {
     setShowDialogues(false);
@@ -567,8 +569,29 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
               </Animatable.View>
             )}
           </View>
+
+          {/* Floating Button - از فردوسی بپرس */}
+          <TouchableOpacity
+            style={styles.ferdowsiButton}
+            onPress={() => setShowFerdowsiModal(true)}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#B79452', '#8B6F47']}
+              style={styles.ferdowsiButtonGradient}
+            >
+              <Text style={styles.ferdowsiButtonIcon}>📜</Text>
+              <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </LinearGradient>
       </ImageBackground>
+
+      {/* Modal گفتگو با فردوسی */}
+      <AskFerdowsiModal
+        visible={showFerdowsiModal}
+        onClose={() => setShowFerdowsiModal(false)}
+      />
     </View>
   );
 };
@@ -796,6 +819,30 @@ const styles = StyleSheet.create({
   aiButtonText: {
     fontSize: theme.typography.size.sm,
     fontWeight: theme.typography.weight.semibold,
+    color: '#fff',
+  },
+  ferdowsiButton: {
+    position: 'absolute',
+    bottom: theme.spacing.xl,
+    left: theme.spacing.md,
+    borderRadius: theme.borderRadius.xl,
+    overflow: 'hidden',
+    ...theme.shadows.lg,
+  },
+  ferdowsiButtonGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  ferdowsiButtonIcon: {
+    fontSize: 24,
+  },
+  ferdowsiButtonText: {
+    fontSize: theme.typography.size.md,
+    fontWeight: theme.typography.weight.bold,
     color: '#fff',
   },
 });
