@@ -11,7 +11,6 @@ import {
   ScrollView,
   Dimensions,
   ImageBackground,
-  I18nManager,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
@@ -20,10 +19,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { useStory } from '../context/StoryContext';
-
-// فعال‌سازی RTL
-I18nManager.forceRTL(true);
-I18nManager.allowRTL(true);
+import { images } from '../assets/images';
+import { soundManager } from '../assets/sounds';
 
 const { width, height } = Dimensions.get('window');
 
@@ -52,6 +49,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   }, [currentNode.id]);
 
   const handleChoice = (choiceId: string, nextNodeId: string) => {
+    // پخش صدای انتخاب
+    soundManager.playSfx('choice');
     setShowChoices(false);
     makeChoice(choiceId, nextNodeId);
   };
@@ -64,11 +63,52 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     resetStory();
   };
 
+  // انتخاب عکس پس‌زمینه بر اساس محتوای داستان
+  const getBackgroundImage = () => {
+    const nodeId = currentNode.id;
+
+    // استفاده از عکس‌های local (اگر وجود دارند)
+    if (nodeId.includes('battle') || nodeId.includes('war') || nodeId.includes('fight') || nodeId.includes('tragic')) {
+      return images.backgrounds.battle;
+    } else if (nodeId.includes('palace') || nodeId.includes('king')) {
+      return images.backgrounds.palace;
+    } else if (nodeId.includes('reunion') || nodeId.includes('happy') || nodeId.includes('good')) {
+      return images.backgrounds.reunion;
+    } else if (nodeId === 'start') {
+      return images.backgrounds.start;
+    }
+
+    // پیش‌فرض
+    return images.backgrounds.default;
+  };
+
+  // پخش موسیقی بر اساس صحنه
+  useEffect(() => {
+    const nodeId = currentNode.id;
+
+    if (nodeId.includes('battle') || nodeId.includes('fight')) {
+      soundManager.playMusic('battle');
+    } else if (currentNode.isEnding) {
+      if (currentNode.endingType === 'good') {
+        soundManager.playMusic('ending_good');
+      } else if (currentNode.endingType === 'bad') {
+        soundManager.playMusic('ending_bad');
+      }
+    } else if (nodeId === 'start') {
+      soundManager.playMusic('story');
+    }
+
+    // Cleanup
+    return () => {
+      // موسیقی رو نگه می‌داریم تا transition روان باشه
+    };
+  }, [currentNode.id]);
+
   return (
     <View style={styles.container}>
       {/* Background Image */}
       <ImageBackground
-        source={{ uri: 'https://via.placeholder.com/800x1200/1a1a2e/f39c12?text=Background' }}
+        source={getBackgroundImage()}
         style={styles.background}
         blurRadius={3}
       >

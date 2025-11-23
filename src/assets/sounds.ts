@@ -4,22 +4,30 @@
 
 import { Audio } from "expo-av";
 
-// فعلاً از placeholder استفاده می‌کنیم
-// وقتی فایل‌های صوتی اضافه شد، uncomment کنید:
+// تابع کمکی برای بارگذاری ایمن صداها
+const safeRequireSound = (requireFunc: any) => {
+  try {
+    return requireFunc;
+  } catch (error) {
+    console.log("فایل صوتی پیدا نشد:", error);
+    return null;
+  }
+};
+
 export const sounds = {
   music: {
-    menu: require("../../assets/audio/music/menu.mp3"),
-    story: require("../../assets/audio/music/story.mp3"),
-    battle: require("../../assets/audio/music/battle.mp3"),
-    ending_good: require("../../assets/audio/music/ending_good.mp3"),
-    ending_bad: require("../../assets/audio/music/ending_bad.mp3"),
+    menu: safeRequireSound(require("../../assets/audio/music/menu.mp3")),
+    story: safeRequireSound(require("../../assets/audio/music/story.mp3")),
+    battle: safeRequireSound(require("../../assets/audio/music/battle.mp3")),
+    ending_good: safeRequireSound(require("../../assets/audio/music/ending_good.mp3")),
+    ending_bad: safeRequireSound(require("../../assets/audio/music/ending_bad.mp3")),
   },
   sfx: {
-    click: require("../../assets/audio/sfx/click.mp3"),
-    transition: require("../../assets/audio/sfx/transition.mp3"),
-    choice: require("../../assets/audio/sfx/choice.mp3"),
-    success: require("../../assets/audio/sfx/success.mp3"),
-    fail: require("../../assets/audio/sfx/fail.mp3"),
+    click: safeRequireSound(require("../../assets/audio/sfx/click.mp3")),
+    transition: safeRequireSound(require("../../assets/audio/sfx/transition.mp3")),
+    choice: safeRequireSound(require("../../assets/audio/sfx/choice.mp3")),
+    success: safeRequireSound(require("../../assets/audio/sfx/success.mp3")),
+    fail: safeRequireSound(require("../../assets/audio/sfx/fail.mp3")),
   },
 };
 
@@ -44,16 +52,62 @@ class SoundManager {
     });
   }
 
-  async playMusic(musicKey: string) {
+  async playMusic(musicKey: keyof typeof sounds.music) {
     if (!this.isMusicEnabled) return;
-    // TODO: پیاده‌سازی بعد از اضافه کردن فایل‌های موسیقی
-    console.log("پخش موسیقی:", musicKey);
+
+    try {
+      const soundFile = sounds.music[musicKey];
+      if (!soundFile) {
+        console.log("فایل موسیقی موجود نیست:", musicKey);
+        return;
+      }
+
+      // توقف موسیقی قبلی
+      if (this.musicSound) {
+        await this.musicSound.stopAsync();
+        await this.musicSound.unloadAsync();
+      }
+
+      // پخش موسیقی جدید
+      const { sound } = await Audio.Sound.createAsync(soundFile, {
+        shouldPlay: true,
+        isLooping: true,
+        volume: this.musicVolume,
+      });
+
+      this.musicSound = sound;
+      console.log("✅ موسیقی پخش شد:", musicKey);
+    } catch (error) {
+      console.log("❌ خطا در پخش موسیقی:", error);
+    }
   }
 
-  async playSfx(sfxKey: string) {
+  async playSfx(sfxKey: keyof typeof sounds.sfx) {
     if (!this.isSfxEnabled) return;
-    // TODO: پیاده‌سازی بعد از اضافه کردن فایل‌های صوتی
-    console.log("پخش افکت صوتی:", sfxKey);
+
+    try {
+      const soundFile = sounds.sfx[sfxKey];
+      if (!soundFile) {
+        console.log("فایل افکت صوتی موجود نیست:", sfxKey);
+        return;
+      }
+
+      const { sound } = await Audio.Sound.createAsync(soundFile, {
+        shouldPlay: true,
+        volume: this.sfxVolume,
+      });
+
+      // پخش و بعد از اتمام، آزاد کردن حافظه
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          sound.unloadAsync();
+        }
+      });
+
+      console.log("✅ افکت صوتی پخش شد:", sfxKey);
+    } catch (error) {
+      console.log("❌ خطا در پخش افکت صوتی:", error);
+    }
   }
 
   async stopMusic() {
