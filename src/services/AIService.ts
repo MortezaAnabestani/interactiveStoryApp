@@ -347,7 +347,9 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join("\n")}
       {
         role: "system",
         content: `تو یک نویسنده خلاق داستان‌های تعاملی هستی.
-        می‌توانی شاخه‌های جدید و جذاب برای داستان پیشنهاد بدهی.`,
+        می‌توانی شاخه‌های جدید و جذاب برای داستان پیشنهاد بدهی.
+
+        مهم: پاسخت باید فقط یک JSON معتبر باشد، بدون هیچ توضیح اضافی.`,
       },
       {
         role: "user",
@@ -355,29 +357,75 @@ ${params.availableChoices.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 تم داستان: ${params.storyTheme}
 آمار بازیکن: شرافت ${params.playerStats.honor}، شجاعت ${params.playerStats.courage}، خرد ${params.playerStats.wisdom}
 
-یک شاخه جدید برای داستان پیشنهاد بده با فرمت JSON:
+یک شاخه جدید برای داستان پیشنهاد بده با فرمت JSON دقیق زیر (بدون هیچ متن اضافی):
 {
   "title": "عنوان صحنه",
-  "description": "توضیحات صحنه",
+  "description": "توضیحات صحنه (2-3 جمله)",
   "choices": ["انتخاب ۱", "انتخاب ۲", "انتخاب ۳"]
-}`,
+}
+
+فقط JSON را برگردان، هیچ توضیح اضافی نده.`,
       },
     ];
 
+    console.log('🌳 [suggestNewBranch] Calling AI...');
     const response = await this.callAI(messages);
+    console.log('🌳 [suggestNewBranch] Raw response:', response.substring(0, 200));
+
     try {
-      // پاک کردن markdown code blocks اگر وجود دارد
-      const cleanedResponse = response
-        .replace(/```json\n?/g, "")
+      // پاک کردن markdown code blocks و whitespace اضافی
+      let cleanedResponse = response
+        .replace(/```json\n?/gi, "")
         .replace(/```\n?/g, "")
         .trim();
-      return JSON.parse(cleanedResponse);
-    } catch {
+
+      // اگر با { شروع نمی‌شود، سعی کن آن را پیدا کنی
+      if (!cleanedResponse.startsWith('{')) {
+        const jsonStart = cleanedResponse.indexOf('{');
+        if (jsonStart !== -1) {
+          cleanedResponse = cleanedResponse.substring(jsonStart);
+        }
+      }
+
+      // اگر با } تمام نمی‌شود، سعی کن آن را پیدا کنی
+      if (!cleanedResponse.endsWith('}')) {
+        const jsonEnd = cleanedResponse.lastIndexOf('}');
+        if (jsonEnd !== -1) {
+          cleanedResponse = cleanedResponse.substring(0, jsonEnd + 1);
+        }
+      }
+
+      console.log('🌳 [suggestNewBranch] Cleaned response:', cleanedResponse.substring(0, 200));
+
+      const parsed = JSON.parse(cleanedResponse);
+
+      // اعتبارسنجی ساختار
+      if (!parsed.title || typeof parsed.title !== 'string') {
+        throw new Error('عنوان معتبر نیست');
+      }
+      if (!parsed.description || typeof parsed.description !== 'string') {
+        throw new Error('توضیحات معتبر نیست');
+      }
+      if (!Array.isArray(parsed.choices) || parsed.choices.length === 0) {
+        throw new Error('انتخاب‌ها معتبر نیستند');
+      }
+
+      console.log('✅ [suggestNewBranch] Successfully parsed:', {
+        title: parsed.title,
+        choicesCount: parsed.choices.length,
+      });
+
       return {
-        title: "صحنه جدید",
-        description: response,
-        choices: [],
+        title: parsed.title,
+        description: parsed.description,
+        choices: parsed.choices,
       };
+    } catch (error: any) {
+      console.error('❌ [suggestNewBranch] Parse error:', error.message);
+      console.error('❌ [suggestNewBranch] Failed response:', response);
+
+      // در صورت خطا، یک ساختار پیش‌فرض با پاسخ خام برگردان
+      throw new Error(`خطا در پردازش پاسخ AI: ${error.message}\n\nپاسخ خام: ${response.substring(0, 100)}...`);
     }
   }
 

@@ -728,6 +728,27 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         visible={showFerdowsiModal}
         onClose={() => setShowFerdowsiModal(false)}
       />
+
+      {/* Loading Overlay برای ساخت نود های AI */}
+      {aiLoading && (
+        <View style={styles.loadingOverlay}>
+          <LinearGradient
+            colors={['rgba(10, 14, 39, 0.95)', 'rgba(22, 33, 62, 0.95)']}
+            style={styles.loadingOverlayGradient}
+          >
+            <Animatable.View
+              animation="pulse"
+              iterationCount="infinite"
+              duration={1500}
+              style={styles.loadingContent}
+            >
+              <ActivityIndicator size="large" color={theme.colors.gold.main} />
+              <Text style={styles.loadingTitle}>🤖 هوش مصنوعی در حال کار است</Text>
+              <Text style={styles.loadingSubtitle}>منتظر بمانید...</Text>
+            </Animatable.View>
+          </LinearGradient>
+        </View>
+      )}
     </View>
   );
 };
@@ -981,6 +1002,35 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.size.md,
     fontWeight: theme.typography.weight.bold,
     color: '#fff',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+  },
+  loadingOverlayGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  loadingTitle: {
+    fontSize: theme.typography.size.xl,
+    fontWeight: theme.typography.weight.bold,
+    color: theme.colors.gold.main,
+    textAlign: 'center',
+    marginTop: theme.spacing.md,
+  },
+  loadingSubtitle: {
+    fontSize: theme.typography.size.md,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
   },
 });
 

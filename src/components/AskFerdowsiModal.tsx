@@ -46,7 +46,15 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleSend = async () => {
-    if (!inputText.trim() || loading) return;
+    // DEBUG: این لاگ همیشه باید نمایش داده شود
+    console.log('🔥🔥🔥 [Ferdowsi DEBUG] handleSend called! Input:', inputText, 'Loading:', loading);
+    Alert.alert('DEBUG', `handleSend called!\nInput: ${inputText}\nLoading: ${loading}`);
+
+    if (!inputText.trim() || loading) {
+      console.log('⚠️ [Ferdowsi] Blocked - empty input or loading');
+      Alert.alert('توجه', 'متن خالی است یا در حال بارگذاری');
+      return;
+    }
 
     const userMessage: Message = {
       role: 'user',
