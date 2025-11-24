@@ -8,6 +8,7 @@ interface StoryContextType {
   gameState: GameState;
   makeChoice: (choiceId: string, nextNodeId: string) => void;
   goToNode: (nodeId: string) => void; // مستقیماً به یک node برو
+  addDynamicNodeAndNavigate: (node: DynamicStoryNode) => string; // اضافه و navigation
   resetStory: () => void;
   saveProgress: () => Promise<void>;
   loadProgress: () => Promise<void>;
@@ -188,22 +189,44 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return nodeId;
   };
 
-  // رفتن مستقیم به یک node (بدون choice)
-  const goToNode = (nodeId: string) => {
-    const nextNode = gameState.dynamicNodes[nodeId] || rostamSohrabStory.nodes[nodeId];
+  // اضافه کردن node و navigation مستقیم (بدون race condition)
+  const addDynamicNodeAndNavigate = (node: DynamicStoryNode): string => {
+    const nodeId = `dynamic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const nodeWithId = { ...node, id: nodeId, createdAt: Date.now() };
 
-    if (!nextNode) {
-      console.warn(`Node not found: ${nodeId}`);
-      return;
-    }
-
-    console.log('🎯 Going to node:', nodeId, nextNode.title);
+    console.log('🎮 Adding dynamic node and navigating:', nodeId, nodeWithId.title);
 
     setGameState((prev) => ({
       ...prev,
       currentNodeId: nodeId,
       visitedNodes: [...prev.visitedNodes, nodeId],
+      dynamicNodes: {
+        ...prev.dynamicNodes,
+        [nodeId]: nodeWithId,
+      },
     }));
+
+    return nodeId;
+  };
+
+  // رفتن مستقیم به یک node (بدون choice)
+  const goToNode = (nodeId: string) => {
+    console.log('🎯 Going to node:', nodeId);
+
+    setGameState((prev) => {
+      const nextNode = prev.dynamicNodes[nodeId] || rostamSohrabStory.nodes[nodeId];
+
+      if (!nextNode) {
+        console.warn(`Node not found: ${nodeId}`);
+        return prev;
+      }
+
+      return {
+        ...prev,
+        currentNodeId: nodeId,
+        visitedNodes: [...prev.visitedNodes, nodeId],
+      };
+    });
   };
 
   const saveProgress = async () => {
@@ -237,6 +260,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         gameState,
         makeChoice,
         goToNode,
+        addDynamicNodeAndNavigate,
         resetStory,
         saveProgress,
         loadProgress,

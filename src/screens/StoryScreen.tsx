@@ -42,7 +42,7 @@ interface Props {
 }
 
 const StoryScreen: React.FC<Props> = ({ navigation }) => {
-  const { currentNode, makeChoice, goToNode, resetStory, gameState, addDynamicNode } = useStory();
+  const { currentNode, makeChoice, goToNode, resetStory, gameState, addDynamicNode, addDynamicNodeAndNavigate } = useStory();
   const [showDialogues, setShowDialogues] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -50,8 +50,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showFerdowsiModal, setShowFerdowsiModal] = useState(false);
 
-  // برای draggable button
-  const pan = useRef(new Animated.ValueXY({ x: width - 180, y: height - 150 })).current;
+  // برای draggable button - موقعیت اولیه در گوشه پایین چپ
+  const pan = useRef(new Animated.ValueXY({ x: 20, y: height - 150 })).current;
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -72,6 +72,17 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         // اگر حرکت کمتر از 10 پیکسل بود، به عنوان کلیک حساب می‌شود
         if (Math.abs(gesture.dx) < 10 && Math.abs(gesture.dy) < 10) {
           setShowFerdowsiModal(true);
+        }
+
+        // محدود کردن به داخل صفحه
+        const clampedX = Math.max(0, Math.min(width - 170, pan.x._value));
+        const clampedY = Math.max(0, Math.min(height - 80, pan.y._value));
+
+        if (clampedX !== pan.x._value || clampedY !== pan.y._value) {
+          Animated.spring(pan, {
+            toValue: { x: clampedX, y: clampedY },
+            useNativeDriver: false,
+          }).start();
         }
       },
     })
@@ -242,9 +253,6 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         nextNodeId: currentNode.id,
       });
 
-      const newNodeId = addDynamicNode(dynamicNode);
-      console.log('🎮 Created dynamic node:', newNodeId);
-
       // پرسیدن از بازیکن
       const message = `${result.title}\n\n${result.description}\n\nمی‌خوای الان این مسیر رو تجربه کنی؟`;
 
@@ -252,12 +260,20 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         '🎮 شاخه جدید ساخته شد!',
         message,
         [
-          { text: 'بعداً', style: 'cancel' },
+          {
+            text: 'بعداً',
+            style: 'cancel',
+            onPress: () => {
+              // فقط node رو اضافه کن بدون navigation
+              addDynamicNode(dynamicNode);
+            }
+          },
           {
             text: 'آره، بریم!',
             onPress: () => {
-              console.log('🚀 Navigating to dynamic node:', newNodeId);
-              goToNode(newNodeId);
+              console.log('🚀 Creating and navigating to dynamic node');
+              // اضافه کن و بلافاصله برو
+              addDynamicNodeAndNavigate(dynamicNode);
             },
           },
         ]
