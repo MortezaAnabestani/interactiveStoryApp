@@ -1,9 +1,10 @@
 /**
- * StoryScreen - نسخه تست ساده
+ * StoryScreen - نسخه تست با Animatable
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Animatable from 'react-native-animatable';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
@@ -16,13 +17,20 @@ interface Props {
 const StoryScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>StoryScreen - نسخه تست</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.goBack()}
+      <Animatable.Text
+        animation="fadeIn"
+        style={styles.text}
       >
-        <Text style={styles.buttonText}>بازگشت</Text>
-      </TouchableOpacity>
+        StoryScreen - تست با Animatable
+      </Animatable.Text>
+      <Animatable.View animation="bounceIn" delay={500}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.buttonText}>بازگشت</Text>
+        </TouchableOpacity>
+      </Animatable.View>
     </View>
   );
 };
