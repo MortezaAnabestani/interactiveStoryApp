@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   playerContainer: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
   },
   npcContainer: {
     flexDirection: "row-reverse",
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   playerName: {
-    textAlign: "left",
+    textAlign: "right",
     color: theme.colors.primary.lighter,
   },
   dialogueBubble: {

@@ -254,10 +254,10 @@ const styles = StyleSheet.create({
     marginVertical: theme.spacing.xs,
   },
   userBubble: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
   },
   assistantBubble: {
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
     flexDirection: 'row-reverse',
     gap: theme.spacing.sm,
   },

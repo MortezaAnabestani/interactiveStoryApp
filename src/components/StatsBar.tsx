@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.weight.bold,
     color: theme.colors.text.primary,
     minWidth: 30,
-    textAlign: 'left',
+    textAlign: 'right',
   },
 });
 
