@@ -46,13 +46,10 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleSend = async () => {
-    // DEBUG: این لاگ همیشه باید نمایش داده شود
-    console.log('🔥🔥🔥 [Ferdowsi DEBUG] handleSend called! Input:', inputText, 'Loading:', loading);
-    Alert.alert('DEBUG', `handleSend called!\nInput: ${inputText}\nLoading: ${loading}`);
+    console.log('📤 [Ferdowsi] handleSend called with input:', inputText.substring(0, 30));
 
     if (!inputText.trim() || loading) {
       console.log('⚠️ [Ferdowsi] Blocked - empty input or loading');
-      Alert.alert('توجه', 'متن خالی است یا در حال بارگذاری');
       return;
     }
 
@@ -279,11 +276,11 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     padding: theme.spacing.md,
-    gap: theme.spacing.md,
+    gap: 6, // فاصله کم بین پیام‌ها (مثل تلگرام)
   },
   messageBubble: {
     maxWidth: '85%',
-    marginVertical: theme.spacing.xs,
+    marginVertical: 2, // فاصله خیلی کم
   },
   userBubble: {
     alignSelf: 'flex-end',
