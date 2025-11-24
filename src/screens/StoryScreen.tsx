@@ -25,6 +25,9 @@ import { useStory } from "../context/StoryContext";
 import { images } from "../assets/images";
 import { soundManager } from "../assets/sounds";
 import { aiService } from "../services/AIService";
+import StatsBar from "../components/StatsBar";
+import RelationshipBar from "../components/RelationshipBar";
+import AskFerdowsiModal from "../components/AskFerdowsiModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -192,10 +195,19 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         </LinearGradient>
       </ImageBackground>
 
-      {/* TODO: Add back components later */}
-      {/* <StatsBar /> */}
-      {/* <RelationshipBar /> */}
-      {/* <AskFerdowsiModal /> */}
+      {/* Stats Bar */}
+      {showStats && (
+        <Animatable.View animation="fadeInRight" duration={500} style={styles.statsPanel}>
+          <StatsBar stats={gameState.stats} />
+          <RelationshipBar relationships={gameState.relationships} />
+        </Animatable.View>
+      )}
+
+      {/* Modal گفتگو با فردوسی */}
+      <AskFerdowsiModal
+        visible={showFerdowsiModal}
+        onClose={() => setShowFerdowsiModal(false)}
+      />
 
       {/* Loading Overlay */}
       {aiLoading && (
@@ -377,6 +389,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: theme.typography.weight.semibold,
     color: "#fff",
+  },
+  statsPanel: {
+    position: "absolute",
+    top: 80,
+    right: 0,
+    width: width * 0.85,
+    maxHeight: height * 0.7,
+    backgroundColor: "rgba(10, 14, 39, 0.95)",
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderBottomLeftRadius: theme.borderRadius.xl,
+    padding: theme.spacing.md,
+    ...theme.shadows.xl,
+    elevation: 10,
+    zIndex: 100,
   },
   loadingOverlay: {
     position: "absolute",
