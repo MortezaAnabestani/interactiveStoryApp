@@ -28,7 +28,7 @@ import { aiService } from "../services/AIService";
 // TODO: تست component ها یکی یکی
 import StatsBar from "../components/StatsBar";
 import RelationshipBar from "../components/RelationshipBar";
-// import AskFerdowsiModal from "../components/AskFerdowsiModal";
+import AskFerdowsiModal from "../components/AskFerdowsiModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -204,11 +204,11 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         </Animatable.View>
       )}
 
-      {/* Modal گفتگو با فردوسی - موقتاً غیرفعال */}
-      {/* <AskFerdowsiModal
+      {/* Modal گفتگو با فردوسی */}
+      <AskFerdowsiModal
         visible={showFerdowsiModal}
         onClose={() => setShowFerdowsiModal(false)}
-      /> */}
+      />
 
       {/* Loading Overlay */}
       {aiLoading && (
