@@ -2,7 +2,7 @@
  * صفحه داستان - نسخه بازی‌وار با گفتگوها و آمار
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,9 @@ import {
   ImageBackground,
   Alert,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -47,6 +49,44 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showFerdowsiModal, setShowFerdowsiModal] = useState(false);
+
+  // Draggable button position
+  const translateX = useRef(new Animated.Value(width - 180)).current;
+  const translateY = useRef(new Animated.Value(height - 150)).current;
+  const startPos = useRef({ x: 0, y: 0 });
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      startPos.current = {
+        x: translateX._value,
+        y: translateY._value,
+      };
+    })
+    .onUpdate((event) => {
+      translateX.setValue(startPos.current.x + event.translationX);
+      translateY.setValue(startPos.current.y + event.translationY);
+    })
+    .onEnd(() => {
+      // Clamp to screen bounds
+      const clampedX = Math.max(0, Math.min(width - 180, translateX._value));
+      const clampedY = Math.max(0, Math.min(height - 100, translateY._value));
+
+      Animated.spring(translateX, {
+        toValue: clampedX,
+        useNativeDriver: false,
+      }).start();
+      Animated.spring(translateY, {
+        toValue: clampedY,
+        useNativeDriver: false,
+      }).start();
+    });
+
+  const tapGesture = Gesture.Tap()
+    .onEnd(() => {
+      setShowFerdowsiModal(true);
+    });
+
+  const composedGesture = Gesture.Race(panGesture, tapGesture);
 
   useEffect(() => {
     setShowDialogues(false);
@@ -614,17 +654,25 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </View>
 
-          {/* Floating Button - از فردوسی بپرس */}
-          <TouchableOpacity
-            style={styles.ferdowsiButton}
-            onPress={() => setShowFerdowsiModal(true)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.ferdowsiButtonGradient}>
-              <Text style={styles.ferdowsiButtonIcon}>📜</Text>
-              <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
-            </View>
-          </TouchableOpacity>
+          {/* Floating Draggable Button - از فردوسی بپرس */}
+          <GestureDetector gesture={composedGesture}>
+            <Animated.View
+              style={[
+                styles.ferdowsiButton,
+                {
+                  transform: [
+                    { translateX },
+                    { translateY },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.ferdowsiButtonGradient}>
+                <Text style={styles.ferdowsiButtonIcon}>📜</Text>
+                <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
+              </View>
+            </Animated.View>
+          </GestureDetector>
         </LinearGradient>
       </ImageBackground>
 
@@ -885,8 +933,8 @@ const styles = StyleSheet.create({
   },
   ferdowsiButton: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
+    top: 0,
+    left: 0,
     borderRadius: 20,
     overflow: 'hidden',
     ...theme.shadows.md,
