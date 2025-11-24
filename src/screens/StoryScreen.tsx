@@ -2,7 +2,7 @@
  * صفحه داستان - نسخه بازی‌وار با گفتگوها و آمار
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,6 @@ import {
   ImageBackground,
   Alert,
   ActivityIndicator,
-  Animated,
-  PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
@@ -49,44 +47,6 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showFerdowsiModal, setShowFerdowsiModal] = useState(false);
-
-  // برای draggable button - موقعیت اولیه در گوشه پایین چپ
-  const pan = useRef(new Animated.ValueXY({ x: 20, y: height - 150 })).current;
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.setOffset({
-          x: pan.x._value,
-          y: pan.y._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: (e, gesture) => {
-        pan.flattenOffset();
-
-        // اگر حرکت کمتر از 10 پیکسل بود، به عنوان کلیک حساب می‌شود
-        if (Math.abs(gesture.dx) < 10 && Math.abs(gesture.dy) < 10) {
-          setShowFerdowsiModal(true);
-        }
-
-        // محدود کردن به داخل صفحه
-        const clampedX = Math.max(0, Math.min(width - 170, pan.x._value));
-        const clampedY = Math.max(0, Math.min(height - 80, pan.y._value));
-
-        if (clampedX !== pan.x._value || clampedY !== pan.y._value) {
-          Animated.spring(pan, {
-            toValue: { x: clampedX, y: clampedY },
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
 
   useEffect(() => {
     setShowDialogues(false);
@@ -654,21 +614,17 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </View>
 
-          {/* Floating Draggable Button - از فردوسی بپرس */}
-          <Animated.View
-            {...panResponder.panHandlers}
-            style={[
-              styles.ferdowsiButton,
-              {
-                transform: [{ translateX: pan.x }, { translateY: pan.y }],
-              },
-            ]}
+          {/* Floating Button - از فردوسی بپرس */}
+          <TouchableOpacity
+            style={styles.ferdowsiButton}
+            onPress={() => setShowFerdowsiModal(true)}
+            activeOpacity={0.8}
           >
             <View style={styles.ferdowsiButtonGradient}>
               <Text style={styles.ferdowsiButtonIcon}>📜</Text>
               <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
             </View>
-          </Animated.View>
+          </TouchableOpacity>
         </LinearGradient>
       </ImageBackground>
 
@@ -929,8 +885,8 @@ const styles = StyleSheet.create({
   },
   ferdowsiButton: {
     position: 'absolute',
-    top: 0,
-    left: 0,
+    bottom: 20,
+    right: 20,
     borderRadius: 20,
     overflow: 'hidden',
     ...theme.shadows.md,
