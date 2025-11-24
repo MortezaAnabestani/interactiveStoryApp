@@ -1,9 +1,9 @@
 /**
- * نوار نمایش آمار بازیکن (شرافت، شجاعت، خرد، شهرت)
+ * نوار نمایش آمار بازیکن (شرافت، شجاعت، خرد، شهرت) - نسخه کیفی
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PlayerStats } from '../types';
@@ -22,30 +22,32 @@ interface StatItemProps {
   compact?: boolean;
 }
 
-const StatItem: React.FC<StatItemProps> = ({ icon, label, value, color, compact }) => (
-  <View style={compact ? styles.statItemCompact : styles.statItem}>
-    <View style={styles.statHeader}>
-      <MaterialCommunityIcons name={icon} size={compact ? 16 : 20} color={color} />
-      {!compact && (
-        <Text style={styles.statLabel}>{label}</Text>
-      )}
+// تبدیل عدد به توصیف کیفی
+const getQualitativeDescription = (value: number): { text: string; color: string } => {
+  if (value >= 81) return { text: 'عالی', color: '#27AE60' };
+  if (value >= 61) return { text: 'خوب', color: '#2ECC71' };
+  if (value >= 41) return { text: 'متوسط', color: '#F39C12' };
+  if (value >= 21) return { text: 'ضعیف', color: '#E67E22' };
+  return { text: 'بسیار ضعیف', color: '#E74C3C' };
+};
+
+const StatItem: React.FC<StatItemProps> = ({ icon, label, value, color, compact }) => {
+  const qualitative = getQualitativeDescription(value);
+
+  return (
+    <View style={compact ? styles.statItemCompact : styles.statItem}>
+      <View style={styles.statRow}>
+        <Text style={[styles.statQuality, { color: qualitative.color }]}>
+          {qualitative.text}
+        </Text>
+        <View style={styles.statLabelRow}>
+          <Text style={styles.statLabel}>{label}</Text>
+          <MaterialCommunityIcons name={icon} size={18} color={color} />
+        </View>
+      </View>
     </View>
-    <View style={styles.statBarContainer}>
-      <LinearGradient
-        colors={[color + '33', color + '66']}
-        style={styles.statBarBackground}
-      >
-        <LinearGradient
-          colors={[color, color + 'CC']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.statBarFill, { width: `${value}%` }]}
-        />
-      </LinearGradient>
-      <Text style={styles.statValue}>{value}</Text>
-    </View>
-  </View>
-);
+  );
+};
 
 const StatsBar: React.FC<Props> = ({ stats, compact = false }) => {
   return (
@@ -57,11 +59,11 @@ const StatsBar: React.FC<Props> = ({ stats, compact = false }) => {
         {!compact && (
           <View style={styles.headerRow}>
             <MaterialCommunityIcons
-              name="chart-bar"
+              name="account-star"
               size={20}
               color={theme.colors.gold.main}
             />
-            <Text style={styles.title}>آمار شخصیت</Text>
+            <Text style={styles.title}>ویژگی‌های شخصیت</Text>
           </View>
         )}
 
@@ -138,52 +140,39 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
   },
   statsGrid: {
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   statsGridCompact: {
     gap: theme.spacing.xs,
   },
   statItem: {
-    marginBottom: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
   },
   statItemCompact: {
-    marginBottom: theme.spacing.xs,
+    paddingVertical: 4,
   },
-  statHeader: {
+  statRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    marginBottom: theme.spacing.xs,
-    gap: theme.spacing.sm,
+    justifyContent: 'space-between',
+  },
+  statLabelRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
   },
   statLabel: {
-    fontSize: theme.typography.size.md,
+    fontSize: 15,
+    fontWeight: theme.typography.weight.medium,
+    color: theme.colors.text.primary,
+  },
+  statQuality: {
+    fontSize: 14,
     fontWeight: theme.typography.weight.semibold,
-    color: theme.colors.text.primary,
-  },
-  statBarContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  statBarBackground: {
-    flex: 1,
-    height: 24,
-    borderRadius: theme.borderRadius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(243, 156, 18, 0.3)',
-  },
-  statBarFill: {
-    height: '100%',
-    borderRadius: theme.borderRadius.md,
-    minWidth: 2,
-  },
-  statValue: {
-    fontSize: theme.typography.size.sm,
-    fontWeight: theme.typography.weight.bold,
-    color: theme.colors.text.primary,
-    minWidth: 30,
-    textAlign: 'right',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
 });
 

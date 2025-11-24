@@ -1,5 +1,5 @@
 /**
- * نوار نمایش روابط با شخصیت‌ها (مثل Scriptic)
+ * نوار نمایش روابط با شخصیت‌ها - نسخه کیفی
  */
 
 import React from 'react';
@@ -23,13 +23,14 @@ interface RelationshipItemProps {
 }
 
 const RelationshipItem: React.FC<RelationshipItemProps> = ({ character, value, compact }) => {
-  // تعیین سطح رابطه
+  // تعیین سطح رابطه به صورت کیفی
   const getRelationshipLevel = () => {
-    if (value >= 80) return { label: 'عشق', icon: 'heart', color: '#E74C3C' };
-    if (value >= 60) return { label: 'دوستی', icon: 'account-heart', color: '#E91E63' };
-    if (value >= 40) return { label: 'خوب', icon: 'emoticon-happy', color: '#9C27B0' };
-    if (value >= 20) return { label: 'خنثی', icon: 'emoticon-neutral', color: '#607D8B' };
-    return { label: 'بد', icon: 'emoticon-sad', color: '#546E7A' };
+    if (value >= 80) return { label: 'صمیمی و نزدیک', icon: 'heart-multiple', color: '#E74C3C' };
+    if (value >= 60) return { label: 'دوست خوب', icon: 'account-heart', color: '#E91E63' };
+    if (value >= 40) return { label: 'رابطه خوب', icon: 'handshake', color: '#9C27B0' };
+    if (value >= 20) return { label: 'آشنا', icon: 'account', color: '#607D8B' };
+    if (value >= -20) return { label: 'بی‌تفاوت', icon: 'minus-circle', color: '#78909C' };
+    return { label: 'رابطه بد', icon: 'close-circle', color: '#795548' };
   };
 
   const level = getRelationshipLevel();
@@ -39,45 +40,33 @@ const RelationshipItem: React.FC<RelationshipItemProps> = ({ character, value, c
 
   return (
     <View style={compact ? styles.itemCompact : styles.item}>
-      <View style={styles.itemHeader}>
-        <Image
-          source={characterImage}
-          style={compact ? styles.avatarCompact : styles.avatar}
-          resizeMode="cover"
-        />
-        <View style={styles.itemInfo}>
+      <View style={styles.itemRow}>
+        <View style={styles.levelContainer}>
+          <View style={[styles.levelBadge, { backgroundColor: level.color }]}>
+            <MaterialCommunityIcons
+              name={level.icon}
+              size={compact ? 16 : 18}
+              color="#fff"
+            />
+          </View>
+          <Text style={[styles.levelText, { color: level.color }]}>
+            {level.label}
+          </Text>
+        </View>
+
+        <View style={styles.characterInfo}>
           <Text style={compact ? styles.nameCompact : styles.name}>{character.name}</Text>
           {character.title && !compact && (
             <Text style={styles.title}>{character.title}</Text>
           )}
         </View>
-        <View style={[styles.levelBadge, { backgroundColor: level.color }]}>
-          <MaterialCommunityIcons
-            name={level.icon}
-            size={compact ? 14 : 16}
-            color="#fff"
-          />
-        </View>
-      </View>
 
-      <View style={styles.progressContainer}>
-        <LinearGradient
-          colors={[level.color + '33', level.color + '66']}
-          style={styles.progressBackground}
-        >
-          <LinearGradient
-            colors={[level.color, level.color + 'CC']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.progressFill, { width: `${value}%` }]}
-          />
-        </LinearGradient>
-        <Text style={styles.valueText}>{value}</Text>
+        <Image
+          source={characterImage}
+          style={compact ? styles.avatarCompact : styles.avatar}
+          resizeMode="cover"
+        />
       </View>
-
-      {!compact && (
-        <Text style={styles.levelText}>{level.label}</Text>
-      )}
     </View>
   );
 };
@@ -104,11 +93,11 @@ const RelationshipBar: React.FC<Props> = ({ relationships, characters, compact =
         {!compact && (
           <View style={styles.headerRow}>
             <MaterialCommunityIcons
-              name="account-multiple-outline"
+              name="account-multiple"
               size={20}
               color={theme.colors.gold.main}
             />
-            <Text style={styles.headerTitle}>روابط</Text>
+            <Text style={styles.headerTitle}>روابط با شخصیت‌ها</Text>
           </View>
         )}
 
@@ -165,26 +154,29 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
   },
   itemsContainer: {
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   item: {
     paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(243, 156, 18, 0.2)',
+    paddingHorizontal: theme.spacing.xs,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   itemCompact: {
     paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  itemHeader: {
+  itemRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-    gap: theme.spacing.sm,
+    justifyContent: 'space-between',
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     borderWidth: 2,
     borderColor: theme.colors.gold.main,
     backgroundColor: theme.colors.background.secondary,
@@ -197,68 +189,50 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.gold.main,
     backgroundColor: theme.colors.background.secondary,
   },
-  itemInfo: {
+  characterInfo: {
     flex: 1,
+    alignItems: 'flex-end',
+    paddingHorizontal: theme.spacing.sm,
   },
   name: {
-    fontSize: theme.typography.size.md,
-    fontWeight: theme.typography.weight.bold,
+    fontSize: 15,
+    fontWeight: theme.typography.weight.semibold,
     color: theme.colors.text.primary,
     textAlign: 'right',
   },
   nameCompact: {
-    fontSize: theme.typography.size.sm,
-    fontWeight: theme.typography.weight.bold,
+    fontSize: 14,
+    fontWeight: theme.typography.weight.medium,
     color: theme.colors.text.primary,
     textAlign: 'right',
   },
   title: {
-    fontSize: theme.typography.size.sm,
+    fontSize: 12,
     color: theme.colors.text.secondary,
     textAlign: 'right',
     marginTop: 2,
   },
+  levelContainer: {
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
   levelBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#fff',
-  },
-  progressContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.xs,
-  },
-  progressBackground: {
-    flex: 1,
-    height: 20,
-    borderRadius: theme.borderRadius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(243, 156, 18, 0.3)',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: theme.borderRadius.md,
-    minWidth: 2,
-  },
-  valueText: {
-    fontSize: theme.typography.size.sm,
-    fontWeight: theme.typography.weight.bold,
-    color: theme.colors.text.primary,
-    minWidth: 30,
-    textAlign: 'right',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   levelText: {
-    fontSize: theme.typography.size.sm,
-    color: theme.colors.text.secondary,
+    fontSize: 12,
+    fontWeight: theme.typography.weight.semibold,
     textAlign: 'center',
-    marginTop: theme.spacing.xs,
-    fontStyle: 'italic',
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
 });
 

@@ -625,54 +625,6 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
                             >
                               {choice.text}
                             </Text>
-                            {choice.consequence && (
-                              <Text style={styles.consequenceText}>
-                                💭 {choice.consequence}
-                              </Text>
-                            )}
-
-                            {/* نمایش تأثیرات */}
-                            {(choice.statChanges || choice.relationshipChanges) && (
-                              <View style={styles.effectsContainer}>
-                                {choice.statChanges && (
-                                  <View style={styles.effectRow}>
-                                    {Object.entries(choice.statChanges).map(
-                                      ([stat, change]) =>
-                                        change !== 0 && (
-                                          <View key={stat} style={styles.effectBadge}>
-                                            <Text style={styles.effectText}>
-                                              {stat === 'honor'
-                                                ? '🛡️'
-                                                : stat === 'courage'
-                                                ? '⚔️'
-                                                : stat === 'wisdom'
-                                                ? '🧠'
-                                                : '🏆'}{' '}
-                                              {change > 0 ? '+' : ''}
-                                              {change}
-                                            </Text>
-                                          </View>
-                                        )
-                                    )}
-                                  </View>
-                                )}
-                                {choice.relationshipChanges && (
-                                  <View style={styles.effectRow}>
-                                    {Object.entries(choice.relationshipChanges).map(
-                                      ([charId, change]) =>
-                                        change !== 0 && (
-                                          <View key={charId} style={styles.effectBadge}>
-                                            <Text style={styles.effectText}>
-                                              ❤️ {characters[charId]?.name}: {change > 0 ? '+' : ''}
-                                              {change}
-                                            </Text>
-                                          </View>
-                                        )
-                                    )}
-                                  </View>
-                                )}
-                              </View>
-                            )}
                           </View>
                         </LinearGradient>
                       </TouchableOpacity>
@@ -712,13 +664,10 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
               },
             ]}
           >
-            <LinearGradient
-              colors={['#B79452', '#8B6F47']}
-              style={styles.ferdowsiButtonGradient}
-            >
+            <View style={styles.ferdowsiButtonGradient}>
               <Text style={styles.ferdowsiButtonIcon}>📜</Text>
               <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
-            </LinearGradient>
+            </View>
           </Animated.View>
         </LinearGradient>
       </ImageBackground>
@@ -883,12 +832,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   choiceText: {
-    fontSize: theme.typography.size.md,
-    fontWeight: theme.typography.weight.semibold,
+    fontSize: 14,
+    fontWeight: theme.typography.weight.medium,
     color: theme.colors.text.primary,
     textAlign: 'right',
     writingDirection: 'rtl',
-    lineHeight: theme.typography.size.md * theme.typography.lineHeight.normal,
+    lineHeight: 20,
   },
   choiceTextDisabled: {
     color: theme.colors.text.disabled,
@@ -982,25 +931,29 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: 20,
     overflow: 'hidden',
-    ...theme.shadows.lg,
-    elevation: 5, // برای Android
+    ...theme.shadows.md,
+    elevation: 4,
   },
   ferdowsiButtonGradient: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 6,
+    backgroundColor: 'rgba(183, 148, 82, 0.35)',
+    backdropFilter: 'blur(10px)',
+    borderWidth: 1,
+    borderColor: 'rgba(183, 148, 82, 0.5)',
   },
   ferdowsiButtonIcon: {
-    fontSize: 24,
+    fontSize: 18,
   },
   ferdowsiButtonText: {
-    fontSize: theme.typography.size.md,
-    fontWeight: theme.typography.weight.bold,
+    fontSize: 12,
+    fontWeight: theme.typography.weight.semibold,
     color: '#fff',
   },
   loadingOverlay: {
