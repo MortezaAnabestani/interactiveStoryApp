@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
@@ -53,8 +54,14 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
       timestamp: Date.now(),
     };
 
-    console.log('📤 Sending to Ferdowsi:', userMessage.content);
-    setMessages((prev) => [...prev, userMessage]);
+    console.log('📤 [Ferdowsi] Sending:', userMessage.content);
+
+    // اضافه کردن پیام کاربر بلافاصله
+    setMessages((prev) => {
+      const updated = [...prev, userMessage];
+      console.log('📝 [Ferdowsi] Messages after user:', updated.length);
+      return updated;
+    });
     setInputText('');
     setLoading(true);
 
@@ -65,11 +72,12 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
         content: msg.content,
       }));
 
-      console.log('📜 History length:', conversationHistory.length);
+      console.log('📜 [Ferdowsi] Calling AI with history:', conversationHistory.length);
       const response = await aiService.askFerdowsi(userMessage.content, conversationHistory);
-      console.log('📥 Response:', response ? response.substring(0, 50) + '...' : 'EMPTY');
+      console.log('📥 [Ferdowsi] Response received:', response ? `${response.length} chars` : 'NULL/EMPTY');
 
       if (!response || response.trim() === '') {
+        Alert.alert('خطا', 'پاسخ خالی از AI دریافت شد');
         throw new Error('پاسخ خالی از AI');
       }
 
@@ -79,18 +87,25 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
         timestamp: Date.now(),
       };
 
-      console.log('✅ Adding message');
-      setMessages((prev) => [...prev, assistantMessage]);
+      console.log('✅ [Ferdowsi] Adding assistant message...');
+      setMessages((prev) => {
+        const updated = [...prev, assistantMessage];
+        console.log('📝 [Ferdowsi] Messages after assistant:', updated.length);
+        console.log('📝 [Ferdowsi] Last message:', updated[updated.length - 1].content.substring(0, 30));
+        return updated;
+      });
 
       // Scroll to bottom
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, 300);
     } catch (error: any) {
-      console.error('❌ Error:', error);
+      console.error('❌ [Ferdowsi] Error:', error);
+      Alert.alert('خطا در فردوسی', `${error.message}\n\nلطفاً تنظیمات AI را بررسی کنید.`);
+
       const errorMessage: Message = {
         role: 'assistant',
-        content: `متأسفانه خطایی رخ داد: ${error.message}. لطفاً دوباره تلاش کنید.`,
+        content: `متأسفانه خطایی رخ داد: ${error.message}`,
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, errorMessage]);

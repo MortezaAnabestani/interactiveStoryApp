@@ -113,11 +113,85 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     setAiEnabled(config.enabled);
   };
 
-  const handleChoice = (choiceId: string, nextNodeId: string) => {
+  const handleChoice = async (choiceId: string, nextNodeId: string) => {
     soundManager.playSfx('choice');
     setShowChoices(false);
     setShowDialogues(false);
-    makeChoice(choiceId, nextNodeId);
+
+    // چک کردن اگر این choice نیاز به AI داره (برای nested dynamic nodes)
+    const choice = currentNode.choices.find((c) => c.id === choiceId);
+
+    if (choice && (choice as any).requiresAI && nextNodeId === 'AI_CONTINUE') {
+      // ساخت nested dynamic node با AI
+      await handleCreateNestedNode(choice.text);
+    } else {
+      // معمولی - برو به node بعدی
+      makeChoice(choiceId, nextNodeId);
+    }
+  };
+
+  // ساخت nested dynamic node
+  const handleCreateNestedNode = async (choiceText: string) => {
+    if (!aiEnabled) {
+      Alert.alert('⚠️ AI غیرفعال است', 'برای ادامه مسیر، AI باید فعال باشد.');
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const currentStory = currentNode.dialogue?.map(d => d.text).join('\n') || currentNode.text || '';
+      const stats = gameState?.stats?.playerStats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+
+      console.log('🎮 Creating nested node based on choice:', choiceText);
+
+      // درخواست به AI برای ادامه داستان بر اساس انتخاب
+      const result = await aiService.suggestNewBranch({
+        currentNode: `${currentStory}\n\nمخاطب انتخاب کرد: "${choiceText}"\n\nادامه این مسیر را بساز.`,
+        playerStats: stats,
+        storyTheme: 'رستم و سهراب',
+      });
+
+      // ساخت nested node جدید
+      const nestedNode: any = {
+        id: '',
+        isDynamic: true,
+        parentNodeId: currentNode.id,
+        returnNodeId: (currentNode as any).returnNodeId || (currentNode as any).parentNodeId || currentNode.id,
+        depth: ((currentNode as any).depth || 0) + 1,
+        maxDepth: 3,
+        title: result.title,
+        text: '',
+        background: currentNode.background || 'default',
+        isEnding: false,
+        dialogue: [
+          {
+            speaker: 'narrator',
+            text: result.description,
+            emotion: 'neutral',
+          },
+        ],
+        choices: result.choices.map((choiceText, i) => ({
+          id: `choice_${i}`,
+          text: choiceText,
+          nextNodeId: 'AI_CONTINUE',
+          requiresAI: true,
+        })),
+      };
+
+      // اضافه کردن choice برگشت
+      nestedNode.choices.push({
+        id: 'return',
+        text: '🔙 بازگشت به داستان اصلی',
+        nextNodeId: nestedNode.returnNodeId,
+      });
+
+      console.log('✅ Nested node created, navigating...');
+      addDynamicNodeAndNavigate(nestedNode);
+    } catch (error: any) {
+      Alert.alert('❌ خطا', `خطا در ساخت مسیر جدید:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleBackToMenu = () => {
@@ -221,14 +295,14 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
 
       // ساخت dynamic node با metadata کامل
       const dynamicNode: any = {
-        id: '', // این در addDynamicNode تنظیم می‌شود
+        id: '', // این در addDynamicNodeAndNavigate تنظیم می‌شود
         isDynamic: true,
         parentNodeId: currentNode.id,
         returnNodeId: currentNode.id,
         depth: 0,
-        maxDepth: 2,
+        maxDepth: 3,
         title: result.title,
-        text: result.description,
+        text: '', // خالی - فقط dialogue نمایش داده میشه
         background: currentNode.background || 'default',
         isEnding: false,
         // ساخت dialogue از description
@@ -242,7 +316,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         choices: result.choices.map((choiceText, i) => ({
           id: `choice_${i}`,
           text: choiceText,
-          nextNodeId: currentNode.id,
+          nextNodeId: 'AI_CONTINUE', // این سیگنال میده که باید dynamic node جدید بسازیم
+          requiresAI: true, // flag برای تشخیص
         })),
       };
 
