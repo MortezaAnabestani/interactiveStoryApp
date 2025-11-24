@@ -25,9 +25,10 @@ import { useStory } from "../context/StoryContext";
 import { images } from "../assets/images";
 import { soundManager } from "../assets/sounds";
 import { aiService } from "../services/AIService";
-import StatsBar from "../components/StatsBar";
-import RelationshipBar from "../components/RelationshipBar";
-import AskFerdowsiModal from "../components/AskFerdowsiModal";
+// TODO: تست component ها یکی یکی
+// import StatsBar from "../components/StatsBar";
+// import RelationshipBar from "../components/RelationshipBar";
+// import AskFerdowsiModal from "../components/AskFerdowsiModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -195,19 +196,19 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         </LinearGradient>
       </ImageBackground>
 
-      {/* Stats Bar */}
-      {showStats && (
+      {/* Stats Bar - موقتاً غیرفعال */}
+      {/* {showStats && (
         <Animatable.View animation="fadeInRight" duration={500} style={styles.statsPanel}>
           <StatsBar stats={gameState.stats} />
           <RelationshipBar relationships={gameState.relationships} />
         </Animatable.View>
-      )}
+      )} */}
 
-      {/* Modal گفتگو با فردوسی */}
-      <AskFerdowsiModal
+      {/* Modal گفتگو با فردوسی - موقتاً غیرفعال */}
+      {/* <AskFerdowsiModal
         visible={showFerdowsiModal}
         onClose={() => setShowFerdowsiModal(false)}
-      />
+      /> */}
 
       {/* Loading Overlay */}
       {aiLoading && (
