@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
   },
   choicesContainer: {
     paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
+    paddingBottom: 30,
     backgroundColor: "rgba(10, 14, 39, 0.8)",
   },
   choicesScrollView: {
