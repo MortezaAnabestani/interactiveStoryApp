@@ -40,7 +40,7 @@ interface Props {
 }
 
 const StoryScreen: React.FC<Props> = ({ navigation }) => {
-  const { currentNode, makeChoice, resetStory, gameState, addDynamicNode } = useStory();
+  const { currentNode, makeChoice, goToNode, resetStory, gameState, addDynamicNode } = useStory();
   const [showDialogues, setShowDialogues] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -189,9 +189,16 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         maxDepth: 2,
         title: result.title,
         text: result.description,
-        background: currentNode.background,
+        background: currentNode.background || 'default',
         isEnding: false,
-        dialogue: [], // برای جلوگیری از خطا
+        // ساخت dialogue از description
+        dialogue: [
+          {
+            speaker: 'narrator',
+            text: result.description,
+            emotion: 'neutral',
+          },
+        ],
         choices: result.choices.map((choiceText, i) => ({
           id: `choice_${i}`,
           text: choiceText,
@@ -207,6 +214,7 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
       });
 
       const newNodeId = addDynamicNode(dynamicNode);
+      console.log('🎮 Created dynamic node:', newNodeId);
 
       // پرسیدن از بازیکن
       const message = `${result.title}\n\n${result.description}\n\nمی‌خوای الان این مسیر رو تجربه کنی؟`;
@@ -219,7 +227,8 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
           {
             text: 'آره، بریم!',
             onPress: () => {
-              handleChoice('ai_branch', newNodeId);
+              console.log('🚀 Navigating to dynamic node:', newNodeId);
+              goToNode(newNodeId);
             },
           },
         ]

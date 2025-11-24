@@ -53,6 +53,7 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
       timestamp: Date.now(),
     };
 
+    console.log('📤 Sending to Ferdowsi:', userMessage.content);
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setLoading(true);
@@ -64,7 +65,13 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
         content: msg.content,
       }));
 
+      console.log('📜 History length:', conversationHistory.length);
       const response = await aiService.askFerdowsi(userMessage.content, conversationHistory);
+      console.log('📥 Response:', response ? response.substring(0, 50) + '...' : 'EMPTY');
+
+      if (!response || response.trim() === '') {
+        throw new Error('پاسخ خالی از AI');
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',
@@ -72,6 +79,7 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
         timestamp: Date.now(),
       };
 
+      console.log('✅ Adding message');
       setMessages((prev) => [...prev, assistantMessage]);
 
       // Scroll to bottom
@@ -79,6 +87,7 @@ const AskFerdowsiModal: React.FC<Props> = ({ visible, onClose }) => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (error: any) {
+      console.error('❌ Error:', error);
       const errorMessage: Message = {
         role: 'assistant',
         content: `متأسفانه خطایی رخ داد: ${error.message}. لطفاً دوباره تلاش کنید.`,

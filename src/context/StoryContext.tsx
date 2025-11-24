@@ -7,6 +7,7 @@ interface StoryContextType {
   currentNode: StoryNode;
   gameState: GameState;
   makeChoice: (choiceId: string, nextNodeId: string) => void;
+  goToNode: (nodeId: string) => void; // مستقیماً به یک node برو
   resetStory: () => void;
   saveProgress: () => Promise<void>;
   loadProgress: () => Promise<void>;
@@ -187,6 +188,24 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return nodeId;
   };
 
+  // رفتن مستقیم به یک node (بدون choice)
+  const goToNode = (nodeId: string) => {
+    const nextNode = gameState.dynamicNodes[nodeId] || rostamSohrabStory.nodes[nodeId];
+
+    if (!nextNode) {
+      console.warn(`Node not found: ${nodeId}`);
+      return;
+    }
+
+    console.log('🎯 Going to node:', nodeId, nextNode.title);
+
+    setGameState((prev) => ({
+      ...prev,
+      currentNodeId: nodeId,
+      visitedNodes: [...prev.visitedNodes, nodeId],
+    }));
+  };
+
   const saveProgress = async () => {
     try {
       await AsyncStorage.setItem("gameState", JSON.stringify(gameState));
@@ -217,6 +236,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentNode,
         gameState,
         makeChoice,
+        goToNode,
         resetStory,
         saveProgress,
         loadProgress,
