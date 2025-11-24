@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 
 // صفحات
@@ -15,7 +15,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import AISettingsScreen from '../screens/AISettingsScreen';
 import GalleryScreen from '../screens/GalleryScreen';
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator = () => {
   return (
@@ -25,14 +25,14 @@ export const AppNavigator = () => {
         screenOptions={{
           headerShown: false,
           gestureEnabled: true,
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+          animation: 'slide_from_right',
         }}
       >
         <Stack.Screen
           name="Splash"
           component={SplashScreen}
           options={{
-            cardStyleInterpolator: CardStyleInterpolators.forFadeFromCenter,
+            animation: 'fade',
           }}
         />
         <Stack.Screen name="MainMenu" component={MainMenuScreen} />

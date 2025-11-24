@@ -7,14 +7,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 
 const { width } = Dimensions.get('window');
 const imageSize = (width - theme.spacing.md * 4) / 2;
 
-type GalleryScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Gallery'>;
+type GalleryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Gallery'>;
 
 interface Props {
   navigation: GalleryScreenNavigationProp;

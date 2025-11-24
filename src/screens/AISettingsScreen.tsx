@@ -6,12 +6,12 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Switch, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { theme } from "../theme";
 import { aiService, AIConfig } from "../services/AIService";
 
-type AISettingsNavigationProp = StackNavigationProp<RootStackParamList, "Settings">;
+type AISettingsNavigationProp = NativeStackNavigationProp<RootStackParamList, "Settings">;
 
 interface Props {
   navigation: AISettingsNavigationProp;

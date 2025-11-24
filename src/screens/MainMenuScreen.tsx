@@ -7,7 +7,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ImageBackground }
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { useStory } from '../context/StoryContext';
@@ -15,7 +15,7 @@ import { soundManager } from '../assets/sounds';
 
 const { width } = Dimensions.get('window');
 
-type MainMenuNavigationProp = StackNavigationProp<RootStackParamList, 'MainMenu'>;
+type MainMenuNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainMenu'>;
 
 interface Props {
   navigation: MainMenuNavigationProp;

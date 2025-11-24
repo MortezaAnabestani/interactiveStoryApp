@@ -17,7 +17,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as Animatable from "react-native-animatable";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
 import { theme } from "../theme";
@@ -33,7 +33,7 @@ import { aiService } from "../services/AIService";
 
 const { width, height } = Dimensions.get("window");
 
-type StoryScreenNavigationProp = StackNavigationProp<RootStackParamList, "Story">;
+type StoryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Story">;
 
 interface Props {
   navigation: StoryScreenNavigationProp;
