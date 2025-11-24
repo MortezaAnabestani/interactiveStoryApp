@@ -24,11 +24,12 @@ import { theme } from "../theme";
 import { useStory } from "../context/StoryContext";
 import { images } from "../assets/images";
 import { soundManager } from "../assets/sounds";
-import { aiService } from "../services/AIService";
-// TODO: تست component ها یکی یکی
+import DialogueBox from "../components/DialogueBox";
 import StatsBar from "../components/StatsBar";
 import RelationshipBar from "../components/RelationshipBar";
 import AskFerdowsiModal from "../components/AskFerdowsiModal";
+import { characters } from "../data/storyData";
+import { aiService } from "../services/AIService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -42,10 +43,12 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const {
     currentNode,
     makeChoice,
+    goToNode,
     resetStory,
     gameState,
+    addDynamicNode,
+    addDynamicNodeAndNavigate,
   } = useStory();
-
   const [showDialogues, setShowDialogues] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -66,6 +69,7 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     };
   }, [currentNode.id]);
 
+  // بررسی وضعیت AI هر بار که صفحه focus می‌شود
   useFocusEffect(
     useCallback(() => {
       checkAIEnabled();
@@ -81,97 +85,472 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
     soundManager.playSfx("choice");
     setShowChoices(false);
     setShowDialogues(false);
-    makeChoice(choiceId, nextNodeId);
+
+    // چک کردن اگر این choice نیاز به AI داره (برای nested dynamic nodes)
+    const choice = currentNode.choices.find((c) => c.id === choiceId);
+
+    if (choice && (choice as any).requiresAI && nextNodeId === "AI_CONTINUE") {
+      // ساخت nested dynamic node با AI
+      await handleCreateNestedNode(choice.text);
+    } else {
+      // معمولی - برو به node بعدی
+      makeChoice(choiceId, nextNodeId);
+    }
+  };
+
+  // ساخت nested dynamic node
+  const handleCreateNestedNode = async (choiceText: string) => {
+    if (!aiEnabled) {
+      Alert.alert("⚠️ AI غیرفعال است", "برای ادامه مسیر، AI باید فعال باشد.");
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const currentStory = currentNode.dialogue?.map((d) => d.text).join("\n") || currentNode.text || "";
+      const stats = gameState?.stats?.playerStats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+
+      console.log("🎮 Creating nested node based on choice:", choiceText);
+
+      // درخواست به AI برای ادامه داستان بر اساس انتخاب
+      const result = await aiService.suggestNewBranch({
+        currentNode: `${currentStory}\n\nمخاطب انتخاب کرد: "${choiceText}"\n\nادامه این مسیر را بساز.`,
+        playerStats: stats,
+        storyTheme: "رستم و سهراب",
+      });
+
+      // ساخت nested node جدید
+      const nestedNode: any = {
+        id: "",
+        isDynamic: true,
+        parentNodeId: currentNode.id,
+        returnNodeId:
+          (currentNode as any).returnNodeId || (currentNode as any).parentNodeId || currentNode.id,
+        depth: ((currentNode as any).depth || 0) + 1,
+        maxDepth: 3,
+        title: result.title,
+        text: "",
+        background: currentNode.background || "default",
+        isEnding: false,
+        dialogue: [
+          {
+            speaker: "narrator",
+            text: result.description,
+            emotion: "neutral",
+          },
+        ],
+        choices: result.choices.map((choiceText, i) => ({
+          id: `choice_${i}`,
+          text: choiceText,
+          nextNodeId: "AI_CONTINUE",
+          requiresAI: true,
+        })),
+      };
+
+      // اضافه کردن choice برگشت
+      nestedNode.choices.push({
+        id: "return",
+        text: "🔙 بازگشت به داستان اصلی",
+        nextNodeId: nestedNode.returnNodeId,
+      });
+
+      console.log("✅ Nested node created, navigating...");
+      addDynamicNodeAndNavigate(nestedNode);
+    } catch (error: any) {
+      Alert.alert("❌ خطا", `خطا در ساخت مسیر جدید:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleBackToMenu = () => {
+    navigation.navigate("MainMenu");
   };
 
   const handleRestart = () => {
-    Alert.alert("شروع دوباره", "آیا می‌خواهید داستان را از ابتدا شروع کنید؟", [
-      { text: "انصراف", style: "cancel" },
-      {
-        text: "بله",
-        onPress: () => {
-          resetStory();
-          soundManager.playSfx("success");
+    resetStory();
+  };
+
+  const handleGetHint = async () => {
+    if (!aiEnabled) {
+      Alert.alert(
+        "⚠️ AI غیرفعال است",
+        "برای استفاده از قابلیت‌های AI، ابتدا از منوی تنظیمات آن را فعال کنید.",
+        [
+          { text: "باشه", style: "cancel" },
+          { text: "برو به تنظیمات", onPress: () => navigation.navigate("AISettings") },
+        ]
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const currentStory = currentNode.text || currentNode.dialogue?.map((d) => d.text).join("\n") || "";
+      const choices = currentNode.choices || [];
+      const stats = gameState?.stats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+
+      const hint = await aiService.getHint({
+        currentSituation: currentStory,
+        availableChoices: choices.map((c) => c.text),
+        playerStats: stats,
+      });
+
+      Alert.alert("💡 راهنمایی", hint, [{ text: "متوجه شدم", style: "default" }]);
+    } catch (error: any) {
+      Alert.alert("❌ خطا", `خطا در دریافت راهنمایی:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleGetSummary = async () => {
+    if (!aiEnabled) {
+      Alert.alert(
+        "⚠️ AI غیرفعال است",
+        "برای استفاده از قابلیت‌های AI، ابتدا از منوی تنظیمات آن را فعال کنید.",
+        [
+          { text: "باشه", style: "cancel" },
+          { text: "برو به تنظیمات", onPress: () => navigation.navigate("AISettings") },
+        ]
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const choicesHistory = gameState?.choices || [];
+      const stats = gameState?.stats?.playerStats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+      const visitedNodes = gameState?.visitedNodes || [];
+      const choicesText = choicesHistory.map((c) => c.choice);
+
+      const summary = await aiService.summarizeStory({
+        visitedNodes: visitedNodes,
+        choices: choicesText,
+        currentStats: stats,
+      });
+
+      Alert.alert("📖 خلاصه داستان تا اینجا", summary, [{ text: "باشه", style: "default" }]);
+    } catch (error: any) {
+      Alert.alert("❌ خطا", `خطا در دریافت خلاصه:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleSuggestBranch = async () => {
+    if (!aiEnabled) {
+      Alert.alert(
+        "⚠️ AI غیرفعال است",
+        "برای استفاده از قابلیت‌های AI، ابتدا از منوی تنظیمات آن را فعال کنید.",
+        [
+          { text: "باشه", style: "cancel" },
+          { text: "برو به تنظیمات", onPress: () => navigation.navigate("AISettings") },
+        ]
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const currentStory = currentNode.text || currentNode.dialogue?.map((d) => d.text).join("\n") || "";
+      const stats = gameState?.stats?.playerStats || { honor: 0, courage: 0, wisdom: 0, fame: 0 };
+
+      const result = await aiService.suggestNewBranch({
+        currentNode: currentStory,
+        playerStats: stats,
+        storyTheme: "رستم و سهراب",
+      });
+
+      // ساخت dynamic node با metadata کامل
+      const dynamicNode: any = {
+        id: "", // این در addDynamicNodeAndNavigate تنظیم می‌شود
+        isDynamic: true,
+        parentNodeId: currentNode.id,
+        returnNodeId: currentNode.id,
+        depth: 0,
+        maxDepth: 3,
+        title: result.title,
+        text: "", // خالی - فقط dialogue نمایش داده میشه
+        background: currentNode.background || "default",
+        isEnding: false,
+        // ساخت dialogue از description
+        dialogue: [
+          {
+            speaker: "narrator",
+            text: result.description,
+            emotion: "neutral",
+          },
+        ],
+        choices: result.choices.map((choiceText, i) => ({
+          id: `choice_${i}`,
+          text: choiceText,
+          nextNodeId: "AI_CONTINUE", // این سیگنال میده که باید dynamic node جدید بسازیم
+          requiresAI: true, // flag برای تشخیص
+        })),
+      };
+
+      // اضافه کردن choice برگشت
+      dynamicNode.choices.push({
+        id: "return",
+        text: "🔙 بازگشت به داستان اصلی",
+        nextNodeId: currentNode.id,
+      });
+
+      // پرسیدن از بازیکن
+      const message = `${result.title}\n\n${result.description}\n\nمی‌خوای الان این مسیر رو تجربه کنی؟`;
+
+      Alert.alert("🎮 شاخه جدید ساخته شد!", message, [
+        {
+          text: "بعداً",
+          style: "cancel",
+          onPress: () => {
+            // فقط node رو اضافه کن بدون navigation
+            addDynamicNode(dynamicNode);
+          },
         },
-      },
-    ]);
+        {
+          text: "آره، بریم!",
+          onPress: () => {
+            console.log("🚀 Creating and navigating to dynamic node");
+            // اضافه کن و بلافاصله برو
+            addDynamicNodeAndNavigate(dynamicNode);
+          },
+        },
+      ]);
+    } catch (error: any) {
+      Alert.alert("❌ خطا", `خطا در دریافت پیشنهاد:\n${error.message}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // انتخاب عکس پس‌زمینه
+  const getBackgroundImage = () => {
+    if (currentNode.background) {
+      // @ts-ignore
+      return images.backgrounds[currentNode.background] || images.backgrounds.default;
+    }
+    return images.backgrounds.default;
   };
 
   return (
     <View style={styles.container}>
-      <ImageBackground source={images.storyBackground} style={styles.background} resizeMode="cover">
-        <LinearGradient
-          colors={["rgba(10, 14, 39, 0.85)", "rgba(22, 33, 62, 0.85)", "rgba(10, 14, 39, 0.85)"]}
-          style={styles.overlay}
-        >
+      <ImageBackground source={getBackgroundImage()} style={styles.background} blurRadius={3}>
+        <LinearGradient colors={["rgba(10, 14, 39, 0.7)", "rgba(22, 33, 62, 0.9)"]} style={styles.overlay}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity style={styles.menuButton} onPress={() => setShowStats(!showStats)}>
-              <MaterialCommunityIcons name={showStats ? "close" : "menu"} size={24} color={theme.colors.gold.main} />
+            <TouchableOpacity style={styles.menuButton} onPress={handleBackToMenu} activeOpacity={0.7}>
+              <MaterialCommunityIcons name="menu" size={24} color={theme.colors.gold.main} />
             </TouchableOpacity>
-            <Text style={styles.chapterTitle}>{currentNode.chapter || "داستان رستم و سهراب"}</Text>
-            <TouchableOpacity style={styles.menuButton} onPress={handleRestart}>
-              <MaterialCommunityIcons name="restart" size={24} color={theme.colors.gold.main} />
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>{currentNode.title}</Text>
+              <Text style={styles.progressText}>گره {gameState.visitedNodes.length}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.menuButton}
+              onPress={() => setShowStats(!showStats)}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="chart-bar" size={24} color={theme.colors.gold.main} />
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
-          <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-            {/* Story Title */}
-            {showDialogues && (
-              <Animatable.View animation="fadeInDown" duration={800}>
-                <Text style={styles.storyTitle}>{currentNode.title}</Text>
+          {/* Stats Panel (Collapsible) */}
+          {showStats && (
+            <Animatable.View animation="fadeInDown" duration={400} style={styles.statsPanel}>
+              <ScrollView style={styles.statsPanelScroll} showsVerticalScrollIndicator={false}>
+                <StatsBar stats={gameState.stats.playerStats} compact />
+                <RelationshipBar
+                  relationships={gameState.stats.relationships}
+                  characters={characters}
+                  compact
+                />
+              </ScrollView>
+            </Animatable.View>
+          )}
+
+          {/* Dialogue Container */}
+          <ScrollView
+            style={styles.dialogueContainer}
+            contentContainerStyle={styles.dialogueContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {showDialogues &&
+              currentNode.dialogue &&
+              currentNode.dialogue.map((dialogue, index) => (
+                <DialogueBox
+                  key={index}
+                  dialogue={dialogue}
+                  characterName={characters[dialogue.speaker]?.name || dialogue.speaker}
+                  delay={index * 400}
+                />
+              ))}
+
+            {/* متن روایت (اگر وجود داشته باشد) */}
+            {showDialogues && currentNode.text && (
+              <Animatable.View
+                animation="fadeIn"
+                delay={currentNode.dialogue ? currentNode.dialogue.length * 400 : 0}
+                duration={600}
+                style={styles.narrativeBox}
+              >
+                <LinearGradient
+                  colors={["rgba(26, 26, 46, 0.9)", "rgba(31, 43, 77, 0.9)"]}
+                  style={styles.narrativeGradient}
+                >
+                  <Text style={styles.narrativeText}>{currentNode.text}</Text>
+                </LinearGradient>
               </Animatable.View>
             )}
 
-            {/* Dialogues - ساده شده */}
-            {showDialogues && currentNode.dialogues && currentNode.dialogues.length > 0 && (
-              <Animatable.View animation="fadeIn" delay={300}>
-                {currentNode.dialogues.map((dialogue, index) => (
-                  <View key={index} style={styles.dialogueBox}>
-                    <Text style={styles.dialogueCharacter}>{dialogue.character}:</Text>
-                    <Text style={styles.dialogueText}>{dialogue.text}</Text>
-                  </View>
-                ))}
+            {/* Ending Badge */}
+            {currentNode.isEnding && showDialogues && (
+              <Animatable.View
+                animation="bounceIn"
+                delay={800}
+                style={[
+                  styles.endingBadge,
+                  {
+                    backgroundColor: theme.colors.ending[currentNode.endingType || "neutral"],
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={
+                    currentNode.endingType === "good"
+                      ? "star"
+                      : currentNode.endingType === "bad"
+                      ? "heart-broken"
+                      : "circle-outline"
+                  }
+                  size={24}
+                  color="#fff"
+                />
+                <Text style={styles.endingText}>
+                  {currentNode.endingType === "good"
+                    ? "پایان خوش"
+                    : currentNode.endingType === "bad"
+                    ? "پایان تلخ"
+                    : "پایان"}
+                </Text>
               </Animatable.View>
             )}
 
-            {/* Choices - ساده شده */}
-            {showChoices && currentNode.choices && currentNode.choices.length > 0 && (
-              <View style={styles.choicesContainer}>
-                {currentNode.choices.map((choice, index) => (
-                  <Animatable.View
-                    key={choice.id}
-                    animation="fadeInUp"
-                    delay={index * 150}
-                    duration={600}
+            {/* AI Tools Section */}
+            {!currentNode.isEnding && showDialogues && (
+              <Animatable.View animation="fadeInUp" delay={600} style={styles.aiToolsContainer}>
+                <Text style={styles.aiToolsTitle}>🤖 دستیار هوش مصنوعی {!aiEnabled && "(غیرفعال)"}</Text>
+                <View style={styles.aiButtonsRow}>
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={handleGetHint}
+                    disabled={aiLoading}
+                    activeOpacity={0.7}
                   >
-                    <TouchableOpacity
-                      style={styles.choiceButton}
-                      onPress={() => handleChoice(choice.id, choice.nextNode)}
-                      activeOpacity={0.8}
-                    >
-                      <LinearGradient
-                        colors={["rgba(26, 26, 46, 0.9)", "rgba(16, 16, 36, 0.9)"]}
-                        style={styles.choiceGradient}
+                    <LinearGradient colors={["#3498DB", "#2980B9"]} style={styles.aiButtonGradient}>
+                      {aiLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="lightbulb-on" size={20} color="#fff" />
+                          <Text style={styles.aiButtonText}>راهنمایی</Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={handleGetSummary}
+                    disabled={aiLoading}
+                    activeOpacity={0.7}
+                  >
+                    <LinearGradient colors={["#9B59B6", "#8E44AD"]} style={styles.aiButtonGradient}>
+                      {aiLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="book-open-variant" size={20} color="#fff" />
+                          <Text style={styles.aiButtonText}>گزارش اعمال</Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={handleSuggestBranch}
+                    disabled={aiLoading}
+                    activeOpacity={0.7}
+                  >
+                    <LinearGradient colors={["#E67E22", "#D35400"]} style={styles.aiButtonGradient}>
+                      {aiLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons name="creation" size={20} color="#fff" />
+                          <Text style={styles.aiButtonText}>خرده‌روایت فرعی</Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </Animatable.View>
+            )}
+          </ScrollView>
+
+          {/* Choices Container */}
+          <View style={styles.choicesContainer}>
+            {showChoices && currentNode.choices.length > 0 && (
+              <ScrollView
+                style={styles.choicesScrollView}
+                contentContainerStyle={styles.choicesContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {currentNode.choices.map((choice, index) => {
+                  // بررسی شرایط فعال بودن انتخاب
+                  const isDisabled = false; // می‌توانید شرایط را بررسی کنید
+
+                  return (
+                    <Animatable.View key={choice.id} animation="fadeInUp" delay={index * 150} duration={600}>
+                      <TouchableOpacity
+                        style={[styles.choiceButton, isDisabled && styles.choiceButtonDisabled]}
+                        onPress={() => handleChoice(choice.id, choice.nextNodeId)}
+                        activeOpacity={0.8}
+                        disabled={isDisabled}
                       >
-                        <View style={styles.choiceTextContainer}>
-                          <Text style={styles.choiceText}>{choice.text}</Text>
-                        </View>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </Animatable.View>
-                ))}
-              </View>
+                        <LinearGradient
+                          colors={
+                            isDisabled
+                              ? ["#2d3561", "#1f2b4d"]
+                              : [theme.colors.primary.lighter, theme.colors.primary.light]
+                          }
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.choiceGradient}
+                        >
+                          <View style={styles.choiceTextContainer}>
+                            <Text style={[styles.choiceText, isDisabled && styles.choiceTextDisabled]}>
+                              {choice.text}
+                            </Text>
+                          </View>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animatable.View>
+                  );
+                })}
+              </ScrollView>
             )}
 
-            {/* End Story */}
-            {showChoices && (!currentNode.choices || currentNode.choices.length === 0) && (
-              <Animatable.View animation="fadeInUp" duration={800} style={styles.endContainer}>
-                <Text style={styles.endTitle}>پایان این بخش</Text>
+            {/* Restart Button for Endings */}
+            {showChoices && currentNode.isEnding && (
+              <Animatable.View animation="fadeInUp" delay={400}>
                 <TouchableOpacity style={styles.restartButton} onPress={handleRestart} activeOpacity={0.8}>
                   <LinearGradient
-                    colors={[theme.colors.gold.light, theme.colors.gold.main, theme.colors.gold.dark]}
+                    colors={[theme.colors.status.warning, theme.colors.gold.dark]}
                     style={styles.restartGradient}
                   >
                     <MaterialCommunityIcons name="restart" size={24} color="#fff" />
@@ -180,9 +559,9 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
                 </TouchableOpacity>
               </Animatable.View>
             )}
-          </ScrollView>
+          </View>
 
-          {/* Floating Button - از فردوسی بپرس (ساده و ثابت) */}
+          {/* Floating Button - از فردوسی بپرس */}
           <TouchableOpacity
             style={styles.ferdowsiButton}
             onPress={() => setShowFerdowsiModal(true)}
@@ -196,21 +575,10 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         </LinearGradient>
       </ImageBackground>
 
-      {/* Stats Bar - تست StatsBar + RelationshipBar */}
-      {showStats && (
-        <Animatable.View animation="fadeInRight" duration={500} style={styles.statsPanel}>
-          <StatsBar stats={gameState.stats} />
-          <RelationshipBar relationships={gameState.relationships} />
-        </Animatable.View>
-      )}
-
       {/* Modal گفتگو با فردوسی */}
-      <AskFerdowsiModal
-        visible={showFerdowsiModal}
-        onClose={() => setShowFerdowsiModal(false)}
-      />
+      <AskFerdowsiModal visible={showFerdowsiModal} onClose={() => setShowFerdowsiModal(false)} />
 
-      {/* Loading Overlay */}
+      {/* Loading Overlay برای ساخت نود های AI */}
       {aiLoading && (
         <View style={styles.loadingOverlay}>
           <LinearGradient
@@ -266,86 +634,147 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.gold.dark,
   },
-  chapterTitle: {
-    fontSize: theme.typography.size.md,
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: theme.typography.size.lg,
     fontWeight: theme.typography.weight.bold,
     color: theme.colors.gold.main,
     textAlign: "center",
   },
-  content: {
+  progressText: {
+    fontSize: theme.typography.size.xs,
+    color: theme.colors.text.tertiary,
+    marginTop: theme.spacing.xs,
+  },
+  statsPanel: {
+    maxHeight: height * 0.3,
+    backgroundColor: "rgba(10, 14, 39, 0.95)",
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.gold.dark,
+  },
+  statsPanelScroll: {
+    maxHeight: height * 0.3,
+  },
+  dialogueContainer: {
     flex: 1,
   },
-  contentContainer: {
-    padding: theme.spacing.md,
+  dialogueContent: {
+    paddingVertical: theme.spacing.md,
   },
-  storyTitle: {
-    fontSize: theme.typography.size.xl,
-    fontWeight: theme.typography.weight.bold,
-    color: theme.colors.gold.light,
-    textAlign: "center",
-    marginBottom: theme.spacing.lg,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  dialogueBox: {
-    backgroundColor: "rgba(26, 26, 46, 0.7)",
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    borderRightWidth: 3,
-    borderRightColor: theme.colors.gold.main,
-  },
-  dialogueCharacter: {
-    fontSize: theme.typography.size.md,
-    fontWeight: theme.typography.weight.bold,
-    color: theme.colors.gold.main,
-    marginBottom: theme.spacing.xs,
-  },
-  dialogueText: {
-    fontSize: theme.typography.size.md,
-    color: "#e0e0e0",
-    lineHeight: 24,
-  },
-  choicesContainer: {
-    marginTop: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
-  choiceButton: {
+  narrativeBox: {
+    marginHorizontal: theme.spacing.md,
+    marginVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
     ...theme.shadows.md,
   },
-  choiceGradient: {
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderWidth: 1,
+  narrativeGradient: {
+    padding: theme.spacing.md,
+    borderWidth: 2,
     borderColor: theme.colors.gold.dark,
+    borderRadius: theme.borderRadius.lg,
   },
-  choiceTextContainer: {
+  narrativeText: {
+    fontSize: theme.typography.size.md,
+    lineHeight: theme.typography.size.md * theme.typography.lineHeight.relaxed,
+    color: theme.colors.text.secondary,
+    textAlign: "right",
+    writingDirection: "rtl",
+    fontStyle: "italic",
+  },
+  endingBadge: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: theme.spacing.md,
+    marginVertical: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
+    gap: theme.spacing.md,
+    ...theme.shadows.xl,
+  },
+  endingText: {
+    fontSize: theme.typography.size.xxl,
+    fontWeight: theme.typography.weight.extrabold,
+    color: "#fff",
+  },
+  choicesContainer: {
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
+    backgroundColor: "rgba(10, 14, 39, 0.8)",
+  },
+  choicesScrollView: {
+    maxHeight: height * 0.28,
+  },
+  choicesContent: {
+    paddingVertical: theme.spacing.sm,
+  },
+  choiceButton: {
+    marginVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.lg,
+    overflow: "hidden",
+    ...theme.shadows.md,
+  },
+  choiceButtonDisabled: {
+    opacity: 0.5,
+  },
+  choiceGradient: {
+    padding: theme.spacing.md,
+    borderWidth: 2,
+    borderColor: theme.colors.gold.dark,
+    borderRadius: theme.borderRadius.lg,
+  },
+  choiceTextContainer: {
+    flex: 1,
   },
   choiceText: {
     fontSize: 14,
     fontWeight: theme.typography.weight.medium,
-    color: "#fff",
-    textAlign: "center",
+    color: theme.colors.text.primary,
+    textAlign: "right",
+    writingDirection: "rtl",
     lineHeight: 20,
   },
-  endContainer: {
-    alignItems: "center",
-    marginTop: theme.spacing.xxl,
-    gap: theme.spacing.lg,
+  choiceTextDisabled: {
+    color: theme.colors.text.disabled,
   },
-  endTitle: {
-    fontSize: theme.typography.size.xl,
-    fontWeight: theme.typography.weight.bold,
+  consequenceText: {
+    fontSize: theme.typography.size.sm,
+    color: theme.colors.text.tertiary,
+    textAlign: "right",
+    writingDirection: "rtl",
+    marginTop: theme.spacing.xs,
+    fontStyle: "italic",
+  },
+  effectsContainer: {
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
+  effectRow: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: theme.spacing.xs,
+  },
+  effectBadge: {
+    backgroundColor: "rgba(243, 156, 18, 0.2)",
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.gold.dark,
+  },
+  effectText: {
+    fontSize: theme.typography.size.xs,
     color: theme.colors.gold.main,
+    fontWeight: theme.typography.weight.semibold,
   },
   restartButton: {
-    borderRadius: theme.borderRadius.xl,
+    marginTop: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
     ...theme.shadows.lg,
   },
@@ -353,13 +782,49 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.xl,
+    padding: theme.spacing.lg,
     gap: theme.spacing.sm,
   },
   restartText: {
     fontSize: theme.typography.size.lg,
     fontWeight: theme.typography.weight.bold,
+    color: "#fff",
+  },
+  aiToolsContainer: {
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+  },
+  aiToolsTitle: {
+    fontSize: theme.typography.size.md,
+    fontWeight: theme.typography.weight.semibold,
+    color: theme.colors.gold.main,
+    textAlign: "center",
+    marginBottom: theme.spacing.sm,
+  },
+  aiButtonsRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+    flexWrap: "wrap",
+  },
+  aiButton: {
+    borderRadius: theme.borderRadius.md,
+    overflow: "hidden",
+    ...theme.shadows.md,
+  },
+  aiButtonGradient: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.xs,
+    minWidth: 100,
+  },
+  aiButtonText: {
+    fontSize: theme.typography.size.sm,
+    fontWeight: theme.typography.weight.semibold,
     color: "#fff",
   },
   ferdowsiButton: {
@@ -391,20 +856,6 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.weight.semibold,
     color: "#fff",
   },
-  statsPanel: {
-    position: "absolute",
-    top: 80,
-    right: 0,
-    width: width * 0.85,
-    maxHeight: height * 0.7,
-    backgroundColor: "rgba(10, 14, 39, 0.95)",
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderBottomLeftRadius: theme.borderRadius.xl,
-    padding: theme.spacing.md,
-    ...theme.shadows.xl,
-    elevation: 10,
-    zIndex: 100,
-  },
   loadingOverlay: {
     position: "absolute",
     top: 0,
@@ -423,13 +874,16 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   loadingTitle: {
-    fontSize: theme.typography.size.lg,
+    fontSize: theme.typography.size.xl,
     fontWeight: theme.typography.weight.bold,
     color: theme.colors.gold.main,
+    textAlign: "center",
+    marginTop: theme.spacing.md,
   },
   loadingSubtitle: {
-    fontSize: theme.typography.size.sm,
-    color: "#ccc",
+    fontSize: theme.typography.size.md,
+    color: theme.colors.text.secondary,
+    textAlign: "center",
   },
 });
 
