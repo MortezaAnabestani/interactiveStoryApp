@@ -98,7 +98,7 @@ class AIService {
    */
   private async callGemini(messages: AIMessage[]): Promise<string> {
     // استفاده از model از config (نه hard-coded!)
-    const MODEL_NAME = this.config.model || "gemini-2.0-flash-exp";
+    const MODEL_NAME = this.config.model || "gemini-2.5-flash";
 
     const requestBody = this.convertToGeminiFormat(messages);
 

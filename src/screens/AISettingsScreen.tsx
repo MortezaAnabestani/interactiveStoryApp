@@ -2,25 +2,16 @@
  * صفحه تنظیمات AI
  */
 
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Switch,
-  Alert,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
-import { aiService, AIConfig } from '../services/AIService';
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Switch, Alert } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../navigation/types";
+import { theme } from "../theme";
+import { aiService, AIConfig } from "../services/AIService";
 
-type AISettingsNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
+type AISettingsNavigationProp = StackNavigationProp<RootStackParamList, "Settings">;
 
 interface Props {
   navigation: AISettingsNavigationProp;
@@ -28,10 +19,10 @@ interface Props {
 
 const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
   const [config, setConfig] = useState<AIConfig>({
-    provider: 'gemini',
-    apiKey: '',
-    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
-    model: 'gemini-2.0-flash-exp',
+    provider: "gemini",
+    apiKey: "",
+    apiUrl: "https://generativelanguage.googleapis.com/v1beta/models",
+    model: "gemini-2.5-flash",
     enabled: false,
   });
   const [showApiKey, setShowApiKey] = useState(false);
@@ -49,33 +40,33 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
   const handleSave = async () => {
     try {
       await aiService.saveConfig(config);
-      Alert.alert('✅ موفق', 'تنظیمات AI ذخیره شد');
+      Alert.alert("✅ موفق", "تنظیمات AI ذخیره شد");
     } catch (error) {
-      Alert.alert('❌ خطا', 'خطا در ذخیره تنظیمات');
+      Alert.alert("❌ خطا", "خطا در ذخیره تنظیمات");
     }
   };
 
-  const handleProviderChange = (provider: 'openai' | 'gemini') => {
-    if (provider === 'gemini') {
+  const handleProviderChange = (provider: "openai" | "gemini") => {
+    if (provider === "gemini") {
       setConfig({
         ...config,
-        provider: 'gemini',
-        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
-        model: 'gemini-2.0-flash-exp',
+        provider: "gemini",
+        apiUrl: "https://generativelanguage.googleapis.com/v1beta/models",
+        model: "gemini-2.5-flash",
       });
     } else {
       setConfig({
         ...config,
-        provider: 'openai',
-        apiUrl: 'https://api.openai.com/v1/chat/completions',
-        model: 'gpt-3.5-turbo',
+        provider: "openai",
+        apiUrl: "https://api.openai.com/v1/chat/completions",
+        model: "gpt-3.5-turbo",
       });
     }
   };
 
   const handleTest = async () => {
     if (!config.apiKey) {
-      Alert.alert('⚠️ هشدار', 'لطفاً ابتدا API Key را وارد کنید');
+      Alert.alert("⚠️ هشدار", "لطفاً ابتدا API Key را وارد کنید");
       return;
     }
 
@@ -84,14 +75,14 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
       await aiService.saveConfig({ ...config, enabled: true });
       const response = await aiService.callAI([
         {
-          role: 'user',
-          content: 'سلام! لطفاً یک جمله کوتاه فارسی بنویس.',
+          role: "user",
+          content: "سلام! لطفاً یک جمله کوتاه فارسی بنویس.",
         },
       ]);
 
-      Alert.alert('✅ موفق', `اتصال به AI برقرار شد!\n\nپاسخ: ${response}`);
+      Alert.alert("✅ موفق", `اتصال به AI برقرار شد!\n\nپاسخ: ${response}`);
     } catch (error: any) {
-      Alert.alert('❌ خطا', `خطا در اتصال:\n${error.message}`);
+      Alert.alert("❌ خطا", `خطا در اتصال:\n${error.message}`);
     } finally {
       setTesting(false);
     }
@@ -99,16 +90,10 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
-      <LinearGradient
-        colors={['rgba(10, 14, 39, 0.95)', 'rgba(16, 33, 62, 0.95)']}
-        style={styles.content}
-      >
+      <LinearGradient colors={["rgba(10, 14, 39, 0.95)", "rgba(16, 33, 62, 0.95)"]} style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <MaterialCommunityIcons name="arrow-right" size={24} color={theme.colors.gold.main} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>تنظیمات هوش مصنوعی</Text>
@@ -117,15 +102,9 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Info Box */}
         <View style={styles.infoBox}>
-          <MaterialCommunityIcons
-            name="robot"
-            size={40}
-            color={theme.colors.gold.main}
-          />
+          <MaterialCommunityIcons name="robot" size={40} color={theme.colors.gold.main} />
           <Text style={styles.infoTitle}>قابلیت‌های AI</Text>
-          <Text style={styles.infoText}>
-            با فعال کردن AI، می‌توانید از قابلیت‌های زیر استفاده کنید:
-          </Text>
+          <Text style={styles.infoText}>با فعال کردن AI، می‌توانید از قابلیت‌های زیر استفاده کنید:</Text>
           <View style={styles.featuresList}>
             <Text style={styles.featureItem}>🎮 تولید داستان پویا</Text>
             <Text style={styles.featureItem}>💬 دیالوگ‌های هوشمند</Text>
@@ -140,15 +119,13 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
               <Text style={styles.switchLabel}>فعال‌سازی AI</Text>
-              <Text style={styles.switchDescription}>
-                برای استفاده از قابلیت‌های هوش مصنوعی
-              </Text>
+              <Text style={styles.switchDescription}>برای استفاده از قابلیت‌های هوش مصنوعی</Text>
             </View>
             <Switch
               value={config.enabled}
               onValueChange={(value) => setConfig({ ...config, enabled: value })}
-              trackColor={{ false: '#767577', true: theme.colors.gold.main }}
-              thumbColor={config.enabled ? theme.colors.gold.light : '#f4f3f4'}
+              trackColor={{ false: "#767577", true: theme.colors.gold.main }}
+              thumbColor={config.enabled ? theme.colors.gold.light : "#f4f3f4"}
             />
           </View>
         </View>
@@ -158,21 +135,18 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.sectionTitle}>ارائه‌دهنده AI</Text>
           <View style={styles.providerContainer}>
             <TouchableOpacity
-              style={[
-                styles.providerButton,
-                config.provider === 'gemini' && styles.providerButtonActive,
-              ]}
-              onPress={() => handleProviderChange('gemini')}
+              style={[styles.providerButton, config.provider === "gemini" && styles.providerButtonActive]}
+              onPress={() => handleProviderChange("gemini")}
             >
               <MaterialCommunityIcons
                 name="google"
                 size={24}
-                color={config.provider === 'gemini' ? theme.colors.gold.main : theme.colors.text.secondary}
+                color={config.provider === "gemini" ? theme.colors.gold.main : theme.colors.text.secondary}
               />
               <Text
                 style={[
                   styles.providerButtonText,
-                  config.provider === 'gemini' && styles.providerButtonTextActive,
+                  config.provider === "gemini" && styles.providerButtonTextActive,
                 ]}
               >
                 Google Gemini
@@ -180,21 +154,18 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.providerButton,
-                config.provider === 'openai' && styles.providerButtonActive,
-              ]}
-              onPress={() => handleProviderChange('openai')}
+              style={[styles.providerButton, config.provider === "openai" && styles.providerButtonActive]}
+              onPress={() => handleProviderChange("openai")}
             >
               <MaterialCommunityIcons
                 name="alpha-o-box"
                 size={24}
-                color={config.provider === 'openai' ? theme.colors.gold.main : theme.colors.text.secondary}
+                color={config.provider === "openai" ? theme.colors.gold.main : theme.colors.text.secondary}
               />
               <Text
                 style={[
                   styles.providerButtonText,
-                  config.provider === 'openai' && styles.providerButtonTextActive,
+                  config.provider === "openai" && styles.providerButtonTextActive,
                 ]}
               >
                 OpenAI
@@ -204,13 +175,13 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Model Presets for Gemini */}
-        {config.provider === 'gemini' && (
+        {config.provider === "gemini" && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>مدل‌های پیشنهادی Gemini</Text>
             <View style={styles.presetsContainer}>
               <TouchableOpacity
                 style={styles.presetButton}
-                onPress={() => setConfig({ ...config, model: 'gemini-2.0-flash-exp' })}
+                onPress={() => setConfig({ ...config, model: "gemini-2.5-flash" })}
               >
                 <Text style={styles.presetButtonText}>⚡ Gemini 2.0 Flash</Text>
                 <Text style={styles.presetButtonSubtext}>(پیشنهادی - سریع)</Text>
@@ -218,7 +189,7 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
 
               <TouchableOpacity
                 style={styles.presetButton}
-                onPress={() => setConfig({ ...config, model: 'gemini-1.5-pro' })}
+                onPress={() => setConfig({ ...config, model: "gemini-1.5-pro" })}
               >
                 <Text style={styles.presetButtonText}>🎯 Gemini 1.5 Pro</Text>
                 <Text style={styles.presetButtonSubtext}>(دقیق‌تر)</Text>
@@ -226,7 +197,7 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
 
               <TouchableOpacity
                 style={styles.presetButton}
-                onPress={() => setConfig({ ...config, model: 'gemini-1.5-flash' })}
+                onPress={() => setConfig({ ...config, model: "gemini-1.5-flash" })}
               >
                 <Text style={styles.presetButtonText}>⚡ Gemini 1.5 Flash</Text>
                 <Text style={styles.presetButtonSubtext}>(اقتصادی)</Text>
@@ -253,21 +224,18 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowApiKey(!showApiKey)}
-              >
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowApiKey(!showApiKey)}>
                 <MaterialCommunityIcons
-                  name={showApiKey ? 'eye-off' : 'eye'}
+                  name={showApiKey ? "eye-off" : "eye"}
                   size={24}
                   color={theme.colors.text.secondary}
                 />
               </TouchableOpacity>
             </View>
             <Text style={styles.inputHint}>
-              {config.provider === 'gemini'
-                ? 'برای دریافت API Key به aistudio.google.com مراجعه کنید'
-                : 'برای دریافت API Key به openai.com مراجعه کنید'}
+              {config.provider === "gemini"
+                ? "برای دریافت API Key به aistudio.google.com مراجعه کنید"
+                : "برای دریافت API Key به openai.com مراجعه کنید"}
             </Text>
           </View>
 
@@ -283,9 +251,7 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <Text style={styles.inputHint}>
-              می‌توانید از APIهای سازگار با OpenAI استفاده کنید
-            </Text>
+            <Text style={styles.inputHint}>می‌توانید از APIهای سازگار با OpenAI استفاده کنید</Text>
           </View>
 
           {/* Model */}
@@ -300,9 +266,7 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <Text style={styles.inputHint}>
-              مثال: gpt-3.5-turbo, gpt-4, claude-3-sonnet
-            </Text>
+            <Text style={styles.inputHint}>مثال: gpt-3.5-turbo, gpt-4, claude-3-sonnet</Text>
           </View>
         </View>
 
@@ -313,26 +277,14 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
             onPress={handleTest}
             disabled={testing}
           >
-            <LinearGradient
-              colors={['#3498DB', '#2980B9']}
-              style={styles.buttonGradient}
-            >
-              <MaterialCommunityIcons
-                name="test-tube"
-                size={20}
-                color="#fff"
-              />
-              <Text style={styles.buttonText}>
-                {testing ? 'در حال تست...' : 'تست اتصال'}
-              </Text>
+            <LinearGradient colors={["#3498DB", "#2980B9"]} style={styles.buttonGradient}>
+              <MaterialCommunityIcons name="test-tube" size={20} color="#fff" />
+              <Text style={styles.buttonText}>{testing ? "در حال تست..." : "تست اتصال"}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button} onPress={handleSave}>
-            <LinearGradient
-              colors={[theme.colors.status.success, '#27AE60']}
-              style={styles.buttonGradient}
-            >
+            <LinearGradient colors={[theme.colors.status.success, "#27AE60"]} style={styles.buttonGradient}>
               <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
               <Text style={styles.buttonText}>ذخیره تنظیمات</Text>
             </LinearGradient>
@@ -341,14 +293,10 @@ const AISettingsScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Help Text */}
         <View style={styles.helpBox}>
-          <MaterialCommunityIcons
-            name="information"
-            size={20}
-            color={theme.colors.text.secondary}
-          />
+          <MaterialCommunityIcons name="information" size={20} color={theme.colors.text.secondary} />
           <Text style={styles.helpText}>
-            برای استفاده از قابلیت‌های AI، ابتدا API Key خود را وارد کنید و تنظیمات را ذخیره کنید.
-            سپس می‌توانید در حین بازی از دکمه‌های AI در صفحه داستان استفاده کنید.
+            برای استفاده از قابلیت‌های AI، ابتدا API Key خود را وارد کنید و تنظیمات را ذخیره کنید. سپس
+            می‌توانید در حین بازی از دکمه‌های AI در صفحه داستان استفاده کنید.
           </Text>
         </View>
       </LinearGradient>
@@ -366,9 +314,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   header: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: theme.spacing.xl,
     paddingTop: theme.spacing.xl,
   },
@@ -376,9 +324,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: 'rgba(26, 26, 46, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(26, 26, 46, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: theme.typography.size.xxl,
@@ -386,13 +334,13 @@ const styles = StyleSheet.create({
     color: theme.colors.gold.main,
   },
   infoBox: {
-    backgroundColor: 'rgba(26, 26, 46, 0.8)',
+    backgroundColor: "rgba(26, 26, 46, 0.8)",
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 2,
     borderColor: theme.colors.gold.dark,
     marginBottom: theme.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
   infoTitle: {
     fontSize: theme.typography.size.xl,
@@ -404,17 +352,17 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: theme.typography.size.md,
     color: theme.colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: theme.spacing.md,
   },
   featuresList: {
-    width: '100%',
+    width: "100%",
     gap: theme.spacing.xs,
   },
   featureItem: {
     fontSize: theme.typography.size.md,
     color: theme.colors.text.primary,
-    textAlign: 'right',
+    textAlign: "right",
     paddingVertical: theme.spacing.xs,
   },
   section: {
@@ -425,13 +373,13 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.weight.bold,
     color: theme.colors.gold.main,
     marginBottom: theme.spacing.md,
-    textAlign: 'right',
+    textAlign: "right",
   },
   switchRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(26, 26, 46, 0.6)',
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(26, 26, 46, 0.6)",
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
@@ -445,12 +393,12 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.size.lg,
     fontWeight: theme.typography.weight.semibold,
     color: theme.colors.text.primary,
-    textAlign: 'right',
+    textAlign: "right",
   },
   switchDescription: {
     fontSize: theme.typography.size.sm,
     color: theme.colors.text.secondary,
-    textAlign: 'right',
+    textAlign: "right",
     marginTop: theme.spacing.xs,
   },
   inputGroup: {
@@ -461,36 +409,36 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.weight.semibold,
     color: theme.colors.text.primary,
     marginBottom: theme.spacing.sm,
-    textAlign: 'right',
+    textAlign: "right",
   },
   inputRow: {
-    position: 'relative',
+    position: "relative",
   },
   input: {
-    backgroundColor: 'rgba(26, 26, 46, 0.6)',
+    backgroundColor: "rgba(26, 26, 46, 0.6)",
     borderWidth: 1,
     borderColor: theme.colors.gold.dark,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     fontSize: theme.typography.size.md,
     color: theme.colors.text.primary,
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   inputWithIcon: {
     paddingRight: 50,
   },
   eyeButton: {
-    position: 'absolute',
+    position: "absolute",
     right: theme.spacing.md,
-    top: '50%',
+    top: "50%",
     transform: [{ translateY: -12 }],
   },
   inputHint: {
     fontSize: theme.typography.size.sm,
     color: theme.colors.text.tertiary,
     marginTop: theme.spacing.xs,
-    textAlign: 'right',
+    textAlign: "right",
   },
   buttonsContainer: {
     gap: theme.spacing.md,
@@ -498,58 +446,58 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: theme.borderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...theme.shadows.md,
   },
   testButton: {
     // Specific styles for test button if needed
   },
   buttonGradient: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
     padding: theme.spacing.lg,
     gap: theme.spacing.sm,
   },
   buttonText: {
     fontSize: theme.typography.size.lg,
     fontWeight: theme.typography.weight.bold,
-    color: '#fff',
+    color: "#fff",
   },
   helpBox: {
-    flexDirection: 'row-reverse',
-    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+    flexDirection: "row-reverse",
+    backgroundColor: "rgba(52, 152, 219, 0.1)",
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(52, 152, 219, 0.3)',
+    borderColor: "rgba(52, 152, 219, 0.3)",
     gap: theme.spacing.sm,
   },
   helpText: {
     flex: 1,
     fontSize: theme.typography.size.sm,
     color: theme.colors.text.secondary,
-    textAlign: 'right',
+    textAlign: "right",
     lineHeight: theme.typography.size.sm * 1.5,
   },
   providerContainer: {
-    flexDirection: 'row-reverse',
+    flexDirection: "row-reverse",
     gap: theme.spacing.md,
   },
   providerButton: {
     flex: 1,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
     gap: theme.spacing.sm,
-    backgroundColor: 'rgba(26, 26, 46, 0.6)',
+    backgroundColor: "rgba(26, 26, 46, 0.6)",
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 2,
     borderColor: theme.colors.gold.dark,
   },
   providerButtonActive: {
-    backgroundColor: 'rgba(183, 148, 82, 0.2)',
+    backgroundColor: "rgba(183, 148, 82, 0.2)",
     borderColor: theme.colors.gold.main,
   },
   providerButtonText: {
@@ -564,23 +512,23 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   presetButton: {
-    backgroundColor: 'rgba(26, 26, 46, 0.6)',
+    backgroundColor: "rgba(26, 26, 46, 0.6)",
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.gold.dark,
-    alignItems: 'center',
+    alignItems: "center",
   },
   presetButtonText: {
     fontSize: theme.typography.size.md,
     fontWeight: theme.typography.weight.semibold,
     color: theme.colors.text.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   presetButtonSubtext: {
     fontSize: theme.typography.size.sm,
     color: theme.colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: theme.spacing.xs,
   },
 });
