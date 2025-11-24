@@ -2,7 +2,7 @@
  * صفحه داستان - نسخه بازی‌وار با گفتگوها و آمار
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   ImageBackground,
   Alert,
   ActivityIndicator,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
@@ -47,6 +49,33 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showFerdowsiModal, setShowFerdowsiModal] = useState(false);
+
+  // برای draggable button
+  const pan = useRef(new Animated.ValueXY({ x: width - 180, y: height - 150 })).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: pan.x._value,
+          y: pan.y._value,
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (e, gesture) => {
+        pan.flattenOffset();
+
+        // اگر حرکت کمتر از 10 پیکسل بود، به عنوان کلیک حساب می‌شود
+        if (Math.abs(gesture.dx) < 10 && Math.abs(gesture.dy) < 10) {
+          setShowFerdowsiModal(true);
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     setShowDialogues(false);
@@ -582,11 +611,15 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </View>
 
-          {/* Floating Button - از فردوسی بپرس */}
-          <TouchableOpacity
-            style={styles.ferdowsiButton}
-            onPress={() => setShowFerdowsiModal(true)}
-            activeOpacity={0.8}
+          {/* Floating Draggable Button - از فردوسی بپرس */}
+          <Animated.View
+            {...panResponder.panHandlers}
+            style={[
+              styles.ferdowsiButton,
+              {
+                transform: [{ translateX: pan.x }, { translateY: pan.y }],
+              },
+            ]}
           >
             <LinearGradient
               colors={['#B79452', '#8B6F47']}
@@ -595,7 +628,7 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.ferdowsiButtonIcon}>📜</Text>
               <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Animated.View>
         </LinearGradient>
       </ImageBackground>
 
@@ -835,11 +868,12 @@ const styles = StyleSheet.create({
   },
   ferdowsiButton: {
     position: 'absolute',
-    bottom: theme.spacing.xl,
-    left: theme.spacing.md,
+    top: 0,
+    left: 0,
     borderRadius: theme.borderRadius.xl,
     overflow: 'hidden',
     ...theme.shadows.lg,
+    elevation: 5, // برای Android
   },
   ferdowsiButtonGradient: {
     flexDirection: 'row-reverse',
