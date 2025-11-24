@@ -26,7 +26,7 @@ import { images } from "../assets/images";
 import { soundManager } from "../assets/sounds";
 import { aiService } from "../services/AIService";
 // TODO: تست component ها یکی یکی
-// import StatsBar from "../components/StatsBar";
+import StatsBar from "../components/StatsBar";
 // import RelationshipBar from "../components/RelationshipBar";
 // import AskFerdowsiModal from "../components/AskFerdowsiModal";
 
@@ -196,13 +196,13 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         </LinearGradient>
       </ImageBackground>
 
-      {/* Stats Bar - موقتاً غیرفعال */}
-      {/* {showStats && (
+      {/* Stats Bar - تست فقط StatsBar */}
+      {showStats && (
         <Animatable.View animation="fadeInRight" duration={500} style={styles.statsPanel}>
           <StatsBar stats={gameState.stats} />
-          <RelationshipBar relationships={gameState.relationships} />
+          {/* <RelationshipBar relationships={gameState.relationships} /> */}
         </Animatable.View>
-      )} */}
+      )}
 
       {/* Modal گفتگو با فردوسی - موقتاً غیرفعال */}
       {/* <AskFerdowsiModal
