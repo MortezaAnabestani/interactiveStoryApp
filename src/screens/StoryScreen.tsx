@@ -497,6 +497,17 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
                       )}
                     </LinearGradient>
                   </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.aiButton}
+                    onPress={() => setShowFerdowsiModal(true)}
+                    activeOpacity={0.7}
+                  >
+                    <LinearGradient colors={["#b79452", "#8B6F3E"]} style={styles.aiButtonGradient}>
+                      <MaterialCommunityIcons name="book-open-page-variant" size={20} color="#fff" />
+                      <Text style={styles.aiButtonText}>از فردوسی بپرس</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
               </Animatable.View>
             )}
@@ -560,28 +571,6 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
               </Animatable.View>
             )}
           </View>
-
-          {/* Floating Button - از فردوسی بپرس */}
-          <Animatable.View
-            animation="pulse"
-            iterationCount="infinite"
-            duration={2000}
-            style={styles.ferdowsiButton}
-          >
-            <TouchableOpacity
-              onPress={() => setShowFerdowsiModal(true)}
-              activeOpacity={0.8}
-              style={styles.ferdowsiTouchable}
-            >
-              <LinearGradient
-                colors={['rgba(183, 148, 82, 0.9)', 'rgba(163, 128, 62, 0.9)']}
-                style={styles.ferdowsiButtonGradient}
-              >
-                <Text style={styles.ferdowsiButtonIcon}>📜</Text>
-                <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animatable.View>
         </LinearGradient>
       </ImageBackground>
 
@@ -836,42 +825,6 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.size.sm,
     fontWeight: theme.typography.weight.semibold,
     color: "#fff",
-  },
-  ferdowsiButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    shadowColor: "#b79452",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  ferdowsiTouchable: {
-    borderRadius: 25,
-    overflow: "hidden",
-  },
-  ferdowsiButtonGradient: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 6,
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: "rgba(183, 148, 82, 0.8)",
-  },
-  ferdowsiButtonIcon: {
-    fontSize: 20,
-  },
-  ferdowsiButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#fff",
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   loadingOverlay: {
     position: "absolute",
