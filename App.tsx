@@ -1,8 +1,6 @@
-import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { I18nManager, Platform } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { I18nManager, Platform, View } from 'react-native';
 import { StoryProvider } from './src/context/StoryContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
@@ -19,11 +17,11 @@ if (!I18nManager.isRTL) {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <StoryProvider>
         <AppNavigator />
         <StatusBar style="light" />
       </StoryProvider>
-    </GestureHandlerRootView>
+    </View>
   );
 }
