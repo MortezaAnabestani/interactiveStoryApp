@@ -27,7 +27,7 @@ import { soundManager } from "../assets/sounds";
 import { aiService } from "../services/AIService";
 // TODO: تست component ها یکی یکی
 import StatsBar from "../components/StatsBar";
-// import RelationshipBar from "../components/RelationshipBar";
+import RelationshipBar from "../components/RelationshipBar";
 // import AskFerdowsiModal from "../components/AskFerdowsiModal";
 
 const { width, height } = Dimensions.get("window");
@@ -196,11 +196,11 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         </LinearGradient>
       </ImageBackground>
 
-      {/* Stats Bar - تست فقط StatsBar */}
+      {/* Stats Bar - تست StatsBar + RelationshipBar */}
       {showStats && (
         <Animatable.View animation="fadeInRight" duration={500} style={styles.statsPanel}>
           <StatsBar stats={gameState.stats} />
-          {/* <RelationshipBar relationships={gameState.relationships} /> */}
+          <RelationshipBar relationships={gameState.relationships} />
         </Animatable.View>
       )}
 
