@@ -97,17 +97,17 @@ class AIService {
    * فراخوانی Gemini API (نسخه اصلاح شده و ایمن)
    */
   private async callGemini(messages: AIMessage[]): Promise<string> {
-    // ۱. تنظیم نام مدل صحیح
-    const MODEL_NAME = "gemini-2.5-flash"; // مدل ۲.۵ وجود ندارد!
+    // استفاده از model از config (نه hard-coded!)
+    const MODEL_NAME = this.config.model || "gemini-2.0-flash-exp";
 
     const requestBody = this.convertToGeminiFormat(messages);
 
-    // ۲. حذف system_instruction اگر خالی است
+    // حذف system_instruction اگر خالی است
     if (!requestBody.system_instruction) {
       delete requestBody.system_instruction;
     }
 
-    // ۳. تنظیمات ایمنی برای جلوگیری از بلاک شدن (خیلی مهم)
+    // تنظیمات ایمنی برای جلوگیری از بلاک شدن
     requestBody.safetySettings = [
       { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
       { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },

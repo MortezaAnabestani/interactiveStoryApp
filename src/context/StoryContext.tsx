@@ -104,6 +104,12 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // رفتن به گره بعدی (ابتدا از dynamicNodes، سپس از backbone)
     const nextNode = gameState.dynamicNodes[nextNodeId] || rostamSohrabStory.nodes[nextNodeId];
 
+    // اگر node پیدا نشد، خطا ندهیم و فقط state را به‌روز کنیم
+    if (!nextNode) {
+      console.warn(`Node not found: ${nextNodeId}`);
+      return;
+    }
+
     setGameState((prev) => {
       const newState = {
         ...prev,
@@ -113,7 +119,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
 
       // اعمال تأثیرات خودکار گره
-      if (nextNode.autoStatChanges) {
+      if (nextNode && nextNode.autoStatChanges) {
         const updatedStats = { ...newState.stats.playerStats };
         Object.entries(nextNode.autoStatChanges).forEach(([stat, change]) => {
           updatedStats[stat as keyof PlayerStats] = Math.max(

@@ -179,20 +179,23 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
         storyTheme: 'رستم و سهراب',
       });
 
-      // ساخت dynamic node با metadata
+      // ساخت dynamic node با metadata کامل
       const dynamicNode: any = {
+        id: '', // این در addDynamicNode تنظیم می‌شود
         isDynamic: true,
         parentNodeId: currentNode.id,
-        returnNodeId: currentNode.id, // فعلاً به همین node برمی‌گردد
+        returnNodeId: currentNode.id,
         depth: 0,
         maxDepth: 2,
         title: result.title,
         text: result.description,
         background: currentNode.background,
+        isEnding: false,
+        dialogue: [], // برای جلوگیری از خطا
         choices: result.choices.map((choiceText, i) => ({
           id: `choice_${i}`,
           text: choiceText,
-          nextNodeId: currentNode.id, // فعلاً همه به node اصلی برمی‌گردند
+          nextNodeId: currentNode.id,
         })),
       };
 
