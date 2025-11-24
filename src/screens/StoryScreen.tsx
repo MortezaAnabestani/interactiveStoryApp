@@ -562,16 +562,26 @@ const StoryScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {/* Floating Button - از فردوسی بپرس */}
-          <TouchableOpacity
+          <Animatable.View
+            animation="pulse"
+            iterationCount="infinite"
+            duration={2000}
             style={styles.ferdowsiButton}
-            onPress={() => setShowFerdowsiModal(true)}
-            activeOpacity={0.8}
           >
-            <View style={styles.ferdowsiButtonGradient}>
-              <Text style={styles.ferdowsiButtonIcon}>📜</Text>
-              <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowFerdowsiModal(true)}
+              activeOpacity={0.8}
+              style={styles.ferdowsiTouchable}
+            >
+              <LinearGradient
+                colors={['rgba(183, 148, 82, 0.9)', 'rgba(163, 128, 62, 0.9)']}
+                style={styles.ferdowsiButtonGradient}
+              >
+                <Text style={styles.ferdowsiButtonIcon}>📜</Text>
+                <Text style={styles.ferdowsiButtonText}>از فردوسی بپرس</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animatable.View>
         </LinearGradient>
       </ImageBackground>
 
@@ -831,30 +841,37 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
-    borderRadius: 20,
+    shadowColor: "#b79452",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  ferdowsiTouchable: {
+    borderRadius: 25,
     overflow: "hidden",
-    ...theme.shadows.md,
-    elevation: 4,
   },
   ferdowsiButtonGradient: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     gap: 6,
-    backgroundColor: "rgba(183, 148, 82, 0.35)",
-    backdropFilter: "blur(10px)",
-    borderWidth: 1,
-    borderColor: "rgba(183, 148, 82, 0.5)",
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: "rgba(183, 148, 82, 0.8)",
   },
   ferdowsiButtonIcon: {
-    fontSize: 18,
+    fontSize: 20,
   },
   ferdowsiButtonText: {
-    fontSize: 12,
-    fontWeight: theme.typography.weight.semibold,
+    fontSize: 13,
+    fontWeight: "700",
     color: "#fff",
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   loadingOverlay: {
     position: "absolute",
